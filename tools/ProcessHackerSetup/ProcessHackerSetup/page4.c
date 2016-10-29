@@ -5,29 +5,22 @@ NTSTATUS DownloadThread(
     _In_ PVOID Arguments
     )
 {
-    BOOLEAN setupSuccess = FALSE;
+    if (!SetupDownloadBuild(Arguments))
+        goto error;
 
-    // Download the latest build
-    if (setupSuccess = SetupDownloadBuild(Arguments))
-    {
-        // Reset the current installation
-        if (setupSuccess = SetupResetCurrentInstall(Arguments))
-        {
-            // Extract and install the latest build
-            if (setupSuccess = SetupExtractBuild(Arguments))
-            {
-                PostMessage(Arguments, PSM_SETCURSELID, 0, IDD_DIALOG5);
-            }
-        }
-    }
+    if (!SetupResetCurrentInstall(Arguments))
+        goto error;
 
-    if (!setupSuccess)
+    if (SetupExtractBuild(Arguments))
     {
-        // Retry download...
-        PostMessage(Arguments, PSM_SETCURSELID, 0, IDD_DIALOG4);
+        PostMessage(Arguments, PSM_SETCURSELID, 0, IDD_DIALOG5);
     }
 
     return STATUS_SUCCESS;
+
+error:
+   PostMessage(Arguments, PSM_SETCURSELID, 0, IDD_DIALOG4); // Retry download
+   return STATUS_FAIL_CHECK;
 }
 
 BOOL PropSheetPage4_OnInitDialog(
@@ -36,18 +29,11 @@ BOOL PropSheetPage4_OnInitDialog(
     _Inout_ LPARAM lParam
     )
 {
+    EnableThemeDialogTexture(hwndDlg, ETDT_ENABLETAB);
     InitializeFont(GetDlgItem(hwndDlg, IDC_MAINHEADER), -17, FW_SEMIBOLD);
     InitializeFont(GetDlgItem(hwndDlg, IDC_MAINHEADER1), -12, FW_SEMIBOLD);
 
-    SetWindowSubclass(
-        GetDlgItem(hwndDlg, IDC_PROGRESS1),
-        SubclassWindowProc,
-        IDC_PROGRESS1,
-        0
-        );
-
-    // Enable the themed dialog background texture.
-    EnableThemeDialogTexture(hwndDlg, ETDT_ENABLETAB);
+    SetWindowSubclass(GetDlgItem(hwndDlg, IDC_PROGRESS1), SubclassWindowProc, IDC_PROGRESS1, 0);
 
     return TRUE;
 }

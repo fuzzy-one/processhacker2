@@ -138,7 +138,6 @@ BOOLEAN SetupExtractBuild(
             }
 
             STATUS_MSG(L"Extracting: %s\r\n", SetupFiles_X64[i].ExtractFileName);
-            Sleep(100);
 
             // Create output file
             if (!NT_SUCCESS(PhCreateFileWin32(
@@ -200,7 +199,6 @@ BOOLEAN SetupExtractBuild(
 
             if (isb.Information != bufferLength && file_crc32 != file_stat.m_crc32)
             {
-                // Corrupted file.
                 __leave;
             }
 
@@ -218,8 +216,6 @@ BOOLEAN SetupExtractBuild(
         // Close the archive
         mz_zip_reader_end(&zip_archive);
     }
-
-    Sleep(3000);
 
     return TRUE;
 }

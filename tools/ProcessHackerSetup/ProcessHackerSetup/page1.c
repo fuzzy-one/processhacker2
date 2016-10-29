@@ -1,7 +1,7 @@
 #include <setup.h>
 #include <appsup.h>
 
-VOID LoadSetupIcons(
+static VOID LoadSetupIcons(
     _In_ HWND hwndDlg
     )
 {
@@ -29,7 +29,7 @@ VOID LoadSetupIcons(
     DeleteObject(smallIconHandle);
 }
 
-VOID LoadSetupImage(
+static VOID LoadSetupImage(
     _In_ HWND hwndDlg
     )
 {
