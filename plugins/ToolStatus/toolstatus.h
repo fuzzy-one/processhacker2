@@ -30,11 +30,11 @@
 #include <phdk.h>
 #include <phappresource.h>
 #include <windowsx.h>
-#include <wincodec.h>
 #include <uxtheme.h>
 #include <vssym32.h>
-#include <toolstatusintf.h>
+
 #include "resource.h"
+#include <toolstatusintf.h>
 
 #define PLUGIN_NAME TOOLSTATUS_PLUGIN_NAME
 #define SETTING_NAME_TOOLSTATUS_CONFIG (PLUGIN_NAME L".Config")
@@ -50,11 +50,10 @@
 #define MAX_TOOLBAR_ITEMS 12
 #define MAX_STATUSBAR_ITEMS 14
 
-#define ID_SEARCH_CLEAR (WM_APP + 1)
-#define TIDC_FINDWINDOW (WM_APP + 2)
-#define TIDC_FINDWINDOWTHREAD (WM_APP + 3)
-#define TIDC_FINDWINDOWKILL (WM_APP + 4)
-#define TIDC_POWERMENUDROPDOWN (WM_APP + 5)
+#define TIDC_FINDWINDOW (WM_APP + 1)
+#define TIDC_FINDWINDOWTHREAD (WM_APP + 2)
+#define TIDC_FINDWINDOWKILL (WM_APP + 3)
+#define TIDC_POWERMENUDROPDOWN (WM_APP + 4)
 
 typedef enum _TOOLBAR_DISPLAY_STYLE
 {
@@ -144,7 +143,6 @@ extern REBAR_DISPLAY_LOCATION RebarDisplayLocation;
 extern HWND RebarHandle;
 extern HWND ToolBarHandle;
 extern HWND SearchboxHandle;
-extern HWND SearchEditHandle;
 
 extern HMENU MainMenu;
 extern HACCEL AcceleratorTable;
@@ -193,11 +191,6 @@ PWSTR ToolbarGetText(
     );
 
 HBITMAP ToolbarGetImage(
-    _In_ INT CommandID
-    );
-
-HICON CustomizeGetToolbarIcon(
-    _In_ PVOID Context,
     _In_ INT CommandID
     );
 
@@ -256,46 +249,6 @@ NTSTATUS QueryServiceFileName(
     _In_ PPH_STRINGREF ServiceName,
     _Out_ PPH_STRING *ServiceFileName,
     _Out_ PPH_STRING *ServiceBinaryPath
-    );
-
-// searchbox.c
-
-typedef struct _EDIT_CONTEXT
-{
-    UINT CommandID;
-    LONG CXWidth;
-    INT CXBorder;
-    INT ImageWidth;
-    INT ImageHeight;
-    HFONT WindowFont;
-    HICON BitmapActive;
-    HICON BitmapInactive;
-    HBRUSH BrushNormal;
-    HBRUSH BrushPushed;
-    HBRUSH BrushHot;
-    //COLORREF BackgroundColorRef;
-
-    union
-    {
-        ULONG Flags;
-        struct
-        {
-            ULONG Hot : 1;
-            ULONG Pushed : 1;
-            ULONG Spare : 30;
-        };
-    };
-} EDIT_CONTEXT, *PEDIT_CONTEXT;
-
-PEDIT_CONTEXT CreateSearchControl(
-    _In_ UINT CmdId
-    );
-
-HBITMAP LoadImageFromResources(
-    _In_ UINT Width,
-    _In_ UINT Height,
-    _In_ PCWSTR Name,
-    _In_ BOOLEAN RGBAImage
     );
 
 // graph.c
@@ -414,5 +367,16 @@ typedef struct _CUSTOMIZE_CONTEXT
     HWND AddButtonHandle;
     HWND RemoveButtonHandle;
 } CUSTOMIZE_CONTEXT, *PCUSTOMIZE_CONTEXT;
+
+HICON CustomizeGetToolbarIcon(
+    _In_ PCUSTOMIZE_CONTEXT Context,
+    _In_ INT CommandID
+    );
+
+// searchbox.c
+
+BOOLEAN CreateSearchboxControl(
+    VOID
+    );
 
 #endif

@@ -25,71 +25,19 @@ Param([bool] $debug);
 function InitializeScriptEnvironment()
 {
     # Get script start time
-    $global:TimeStart = (Get-Date);
+    $global:TimeStart = (Get-Date)
 
     # Stop script execution after any errors.
-    $global:ErrorActionPreference = "Stop";
+    $global:ErrorActionPreference = "Stop"
 
-    if (Test-Path Env:\APPVEYOR)
-    {
-        $global:buildbot = $true;
-
-        # AppVeyor preseves the directory structure during deployment.
-        # So, we need to output into the current directory to upload into the correct FTP directory.
-        $env:BUILD_OUTPUT_FOLDER = ".";
-    }
-    else
-    {
-        $global:buildbot = $false;
-
-        # This directory is excluded by .gitignore and handy for local builds.
-        $env:BUILD_OUTPUT_FOLDER = "ClientBin";
-
-        # Set the default branch for the build-src.zip.
-        # We only set this when doing a local build, the buildbot sets this variable based on our appveyor.yml.
-        $env:APPVEYOR_REPO_BRANCH = "master";
-    }
-
-    if ($global:buildbot)
-    {
-        # intentionally empty
-        Write-Host;
-    }
-    else
-    {
-        # Clear the console (if we're not running on the appveyor buildbot)
-        Clear-Host;
-    }
-
-    if ($debug)
-    {
-        # Enable debug if we have a valid argument.
-        $global:debug_enabled = $true;
-    }
-
-    if (Test-Path Env:\APPVEYOR_RE_BUILD)
-    {
-        # Always enable debug when the build was executed by the "RE-BUILD COMMIT" button on the AppVeyor web interface.
-        # This way we can get debug output without having to commit changes to our yml on github after a build fails.
-        $global:debug_enabled = $true;
-    }
-
-    if ($global:debug_enabled)
-    {
-        Write-Host "[DEBUG MODE]" -ForegroundColor Red
-    }
-}
-
-function CheckBaseDirectory()
-{
     # Check if the current directory contains the main solution
     if (!(Test-Path "ProcessHacker.sln"))
     {
         # Change root directory to the \build\internal\ directory (where this script is located).
-        Set-Location $PSScriptRoot;
+        Set-Location $PSScriptRoot
 
         # Set the current location to the base repository directory.
-        Set-Location "..\..\";
+        Set-Location "..\..\"
 
         # Re-check if the current directory
         if (!(Test-Path "ProcessHacker.sln"))
@@ -98,6 +46,81 @@ function CheckBaseDirectory()
             exit 5
         }
     }
+
+    if (Test-Path Env:\APPVEYOR)
+    {
+        $global:buildbot = $true;
+
+        # AppVeyor preseves the directory structure during deployment.
+        # So, we need to output into the current directory to upload into the correct FTP directory.
+        #$env:BUILD_OUTPUT_FOLDER = ".";
+        $env:APPVEYOR_REPO_BRANCH = "master"
+        $env:BUILD_OUTPUT_FOLDER = "ClientBin"
+    }
+    else
+    {
+        #$global:buildbot = $false;
+
+        # Set the default branch for the build-src.zip.
+        # We only set this when doing a local build, the buildbot sets this variable based on our appveyor.yml.
+        $env:APPVEYOR_REPO_BRANCH = "master"
+        $env:BUILD_OUTPUT_FOLDER = "ClientBin"
+    }
+
+    if ($global:buildbot)
+    {
+        # intentionally empty
+        Write-Host
+    }
+    else
+    {
+        # Clear the console (if we're not running on the appveyor buildbot)
+        #Clear-Host
+    }
+
+    if ($debug)
+    {
+        # Enable debug if we have a valid argument.
+        $global:debug_enabled = $true
+    }
+
+    if (Test-Path Env:\APPVEYOR_RE_BUILD)
+    {
+        # Always enable debug when the build was executed by the "RE-BUILD COMMIT" button on the AppVeyor web interface.
+        # This way we can get debug output without having to commit changes to our yml on github after a build fails.
+        #$global:debug_enabled = $true;
+    }
+
+    if ($global:debug_enabled)
+    {
+        Write-Host "[DEBUG MODE]" -ForegroundColor Red
+    }
+}
+
+function InitializeBuildEnvironment()
+{
+    $git = "${env:ProgramFiles}\Git\cmd\git.exe"
+
+    if (Test-Path $git)
+    {
+        Write-Host "Getting build information...  " -NoNewline -ForegroundColor Cyan
+
+        $global:latestGitMessage =  (& "$git" "log", "-n", "5", "--pretty=%B") | Out-String
+        $global:latestGitTag =      (& "$git" "describe", "--abbrev=0", "--tags", "--always") | Out-String
+        #$global:latestGitCount =   (& "$git" "rev-list", "--count", "master") | Out-String
+        $global:latestGitRevision = (& "$git" "rev-list", "--count", ($global:latestGitTag.Trim() + "..master")) | Out-String
+        
+        $global:buildMessage = $global:latestGitMessage -Replace "`r`n`r`n", "`r`n"
+        $global:buildMessageLine = ($global:buildMessage -split '\r\n')[0]
+        $global:fileVersion = "3.0." + $global:latestGitRevision.Trim() #${env:APPVEYOR_BUILD_VERSION}
+
+        Write-Host "$global:fileVersion ($global:buildMessageLine)" -ForegroundColor White
+    }
+
+    if (!(Test-Path "${env:BUILD_OUTPUT_FOLDER}"))
+    {
+        New-Item "${env:BUILD_OUTPUT_FOLDER}" -type Directory  -Force | Out-Null
+    }
 }
 
 function BuildSolution([string] $FileName)
@@ -105,7 +128,7 @@ function BuildSolution([string] $FileName)
     # Set msbuild path (TODO: Do we need the 32bit version of MSBuild for x86 builds?)
     $msBuild = "${env:ProgramFiles(x86)}\MSBuild\14.0\bin\amd64\MSBuild.exe"
     # Get base file name
-    $baseName = [System.IO.Path]::GetFileNameWithoutExtension($FileName);
+    $baseName = [System.IO.Path]::GetFileNameWithoutExtension($FileName)
 
     Write-Host "Building $baseName" -NoNewline -ForegroundColor Cyan
 
@@ -118,32 +141,110 @@ function BuildSolution([string] $FileName)
         $verbose = "quiet";
     }
 
-    & $msBuild  "/m",
-                "/nologo",
-                "/verbosity:$verbose",
-                "/p:Configuration=Release",
-                "/p:Platform=Win32",
-                "/t:Rebuild",
-                "/nodeReuse:true",
-                "$FileName"
-
-    & $msBuild  "/m",
-                "/nologo",
-                "/verbosity:$verbose",
-                "/p:Configuration=Release",
-                "/p:Platform=x64",
-                "/t:Rebuild",
-                "/nodeReuse:true",
-                "$FileName"
-
-    if ($LASTEXITCODE -eq 0)
+    if (($global:buildbot) -and (Test-Path Env:\VIRUSTOTAL_BUILD_KEY))
     {
-        Write-Host "        [SUCCESS]" -ForegroundColor Green
+        $msbuild_output += & "$msBuild"  "/m",
+                    "/nologo",
+                    "/verbosity:$verbose",
+                    "/p:Configuration=Release",
+                    "/p:Platform=Win32",
+                    "/p:ExternalCompilerOptions=VIRUSTOTAL_API",
+                    "/t:Rebuild",        
+                    "/nodeReuse:true",
+                    "$FileName";
+
+        if (!($LASTEXITCODE -eq 0))
+        {
+            Write-Host "        [ERROR] (Win32) $msbuild_output" -ForegroundColor Red
+            exit 2
+        }
+
+        $msbuild_output += & "$msBuild"  "/m",
+                    "/nologo",
+                    "/verbosity:$verbose",
+                    "/p:Configuration=Release",
+                    "/p:Platform=x64",
+                    "/p:ExternalCompilerOptions=VIRUSTOTAL_API",
+                    "/t:Rebuild",
+                    "/nodeReuse:true",
+                    "$FileName";
+
+        if (!($LASTEXITCODE -eq 0))
+        {
+            Write-Host "        [ERROR] (x64) $msbuild_output" -ForegroundColor Red
+            exit 2
+        }
     }
     else
     {
-        Write-Host "        [ERROR]" -ForegroundColor Red
+        if ($global:debug_enabled)
+        {
+            $msbuild_output += & "$msBuild"  "/m",
+                        "/nologo",
+                        "/verbosity:$verbose",
+                        "/p:Configuration=Release",
+                        "/p:Platform=Win32",
+                        "/t:Rebuild",        
+                        "/nodeReuse:true",
+                        "$FileName";
+
+            if (!($LASTEXITCODE -eq 0))
+            {
+                Write-Host "        [ERROR] (Win32) $msbuild_output" -ForegroundColor Red
+                exit 2
+            }
+
+            $msbuild_output += & $msBuild  "/m",
+                        "/nologo",
+                        "/verbosity:$verbose",
+                        "/p:Configuration=Release",
+                        "/p:Platform=x64",
+                        "/t:Rebuild",
+                        "/nodeReuse:true",
+                        "$FileName";
+
+            if (!($LASTEXITCODE -eq 0))
+            {
+                Write-Host "        [ERROR] (x64) $msbuild_output" -ForegroundColor Red
+                exit 2
+            }
+        }
+        else
+        {
+            $msbuild_output += & "$msBuild"  "/m",
+                        "/nologo",
+                        "/verbosity:$verbose",
+                        "/p:Configuration=Release",
+                        "/p:Platform=Win32",
+                        "/t:Rebuild",        
+                        "/nodeReuse:true",
+                        "$FileName" | Out-String;
+
+            if (!($LASTEXITCODE -eq 0))
+            {
+                Write-Host "        [ERROR] (Win32) $msbuild_output" -ForegroundColor Red
+                exit 2
+            }
+
+            $msbuild_output += & "$msBuild"  "/m",
+                        "/nologo",
+                        "/verbosity:$verbose",
+                        "/p:Configuration=Release",
+                        "/p:Platform=x64",
+                        "/t:Rebuild",
+                        "/nodeReuse:true",
+                        "$FileName" | Out-String;
+
+            if (!($LASTEXITCODE -eq 0))
+            {
+                Write-Host "        [ERROR] (x64) $msbuild_output" -ForegroundColor Red
+                exit 2
+            }
+        }
+
     }
+
+    Write-Host "        [SUCCESS]" -ForegroundColor Green
 }
 
 function CopyTextFiles()
@@ -353,7 +454,131 @@ function SetupProcessHackerWow64()
     Copy-Item "bin\Release32\plugins\DotNetTools.dll"  "bin\Release64\x86\plugins\"
     Copy-Item "bin\Release32\plugins\DotNetTools.pdb"  "bin\Release64\x86\plugins\"
 
-    Write-Host "        [SUCCESS]" -ForegroundColor Green
+    Write-Host "       [SUCCESS]" -ForegroundColor Green
+}
+
+function SetupSignatureFiles()
+{
+    $secure_file = "tools\SecureBuildTool\secure-file.exe";
+    
+    Write-Host "Setting up signature files" -NoNewline -ForegroundColor Cyan
+    
+    if ((!$global:buildbot) -and !(Test-Path Env:\VIRUSTOTAL_BUILD_KEY) -and !(Test-Path Env:\NIGHTLY_BUILD_KEY) -and !(Test-Path Env:\KPH_BUILD_KEY))
+    {
+        Write-Host " [SKIPPED] (missing build keys)" -ForegroundColor Yellow
+        return
+    }
+    
+    if (!(Test-Path "$secure_file"))
+    {
+        Write-Host " [SKIPPED] (secure-file not installed)" -ForegroundColor Yellow
+        return
+    }
+    
+    & "$secure_file" "-decrypt",
+            "plugins\OnlineChecks\virustotal.s",
+            "-secret",
+            "${env:VIRUSTOTAL_BUILD_KEY}",
+            "-out",
+            "plugins\OnlineChecks\virustotal.h"
+
+
+    if (!($LASTEXITCODE -eq 0))
+    {
+        Write-Host "    [ERROR] (virustotal)" -ForegroundColor Red
+        exit 5
+    }
+
+    & "$secure_file" "-decrypt",
+            "build\internal\nightly.s",
+            "-secret",
+            "${env:NIGHTLY_BUILD_KEY}",
+            "-out",
+            "build\internal\nightly.key"
+
+    if (!($LASTEXITCODE -eq 0))
+    {
+        Write-Host "    [ERROR] (virustotal)" -ForegroundColor Red
+        exit 5
+    }
+    
+    & "$secure_file" "-decrypt",
+            "build\internal\kph.s",
+            "-secret",
+            "${env:KPH_BUILD_KEY}",
+            "-out",
+            "build\internal\kph.key"
+            
+    if ($LASTEXITCODE -eq 0)
+    {
+        Write-Host "    [SUCCESS]" -ForegroundColor Green
+    }
+    else
+    {
+        Write-Host "    [ERROR] (KPH)" -ForegroundColor Red
+        exit 5
+    }
+}
+
+function BuildKphSignature()
+{
+    $sign_file = "tools\CustomSignTool\bin\Release32\CustomSignTool.exe"
+
+    Write-Host "Update KPH signatures" -NoNewline -ForegroundColor Cyan
+    
+    if ((!$global:buildbot) -and !(Test-Path Env:\KPH_BUILD_KEY))
+    {
+        Write-Host " [SKIPPED] (KPH build key)" -ForegroundColor Yellow
+        return
+    }
+
+    if (!(Test-Path "build\internal\kph.key"))
+    {
+        Write-Host " [SKIPPED] (kph.key)" -ForegroundColor Yellow
+        return
+    }
+
+    if (!(Test-Path "bin\Release32\ProcessHacker.exe"))
+    {
+        Write-Host " [SKIPPED] (Release32\ProcessHacker.exe)" -ForegroundColor Yellow
+        return
+    }
+
+    if (!(Test-Path "bin\Release64\ProcessHacker.exe"))
+    {
+        Write-Host " [SKIPPED] (Release64\ProcessHacker.exe)" -ForegroundColor Yellow
+        return
+    }
+
+    & "$sign_file" "sign", 
+        "-k", 
+        "build\internal\kph.key", 
+        "bin\Release32\ProcessHacker.exe", 
+        "-s",
+        "bin\Release32\ProcessHacker.sig"
+
+    if (!($LASTEXITCODE -eq 0))
+    {
+        Write-Host "     [ERROR]" -ForegroundColor Red
+        exit 5
+    }
+
+    & "$sign_file" "sign", 
+        "-k", 
+        "build\internal\kph.key", 
+        "bin\Release64\ProcessHacker.exe", 
+        "-s",
+        "bin\Release64\ProcessHacker.sig"
+
+    if ($LASTEXITCODE -eq 0)
+    {
+        Write-Host "     [SUCCESS]" -ForegroundColor Green
+    }
+    else
+    {
+        Write-Host "     [ERROR]" -ForegroundColor Red
+        exit 5
+    }
 }
 
 function BuildSetupExe()
@@ -363,15 +588,10 @@ function BuildSetupExe()
 
     Write-Host "Building build-setup.exe" -NoNewline -ForegroundColor Cyan
 
-    if (!(Test-Path "$innoBuild"))
+    if (!(Test-Path $innoBuild))
     {
         Write-Host "`t[SKIPPED] (Inno Setup not installed)" -ForegroundColor Yellow
-        return;
-    }
-
-    if ((!$global:buildbot) -and (!(Test-Path Env:\BUILD_OUTPUT_FOLDER)))
-    {
-        New-Item "$env:BUILD_OUTPUT_FOLDER" -type Directory -ErrorAction SilentlyContinue | Out-Null
+        return
     }
 
     if ($global:debug_enabled)
@@ -385,24 +605,35 @@ function BuildSetupExe()
         & "$innoBuild" "build\installer\Process_Hacker_installer.iss" | Out-Null
     }
 
-    Remove-Item "$setupPath" -ErrorAction SilentlyContinue
 
-    Move-Item "build\installer\processhacker-3.0-setup.exe" "$setupPath" -ErrorAction SilentlyContinue
+    Remove-Item "$setupPath" -Force -ErrorAction SilentlyContinue
 
-    Write-Host "    [SUCCESS]" -ForegroundColor Green
+
+    Move-Item "build\installer\processhacker-3.0-setup.exe" "$setupPath"
+
+    
+    if ($LASTEXITCODE -eq 0)
+    {
+        Write-Host "    [SUCCESS]" -ForegroundColor Green
+    }
+    else
+    {
+        Write-Host "     [ERROR]" -ForegroundColor Red
+        exit 4
+    }
 }
 
 function BuildSdkZip()
 {
     $7zip =     "${env:ProgramFiles}\7-Zip\7z.exe"
-    $zip_path = "${env:BUILD_OUTPUT_FOLDER}\processhacker-build-sdk.zip";
+    $zip_path = "${env:BUILD_OUTPUT_FOLDER}\processhacker-build-sdk.zip"
 
     Write-Host "Building build-sdk.zip" -NoNewline -ForegroundColor Cyan
 
     if (!(Test-Path "$7zip"))
     {
         Write-Host "`t[SKIPPED] (7-Zip not installed)" -ForegroundColor Yellow
-        return;
+        return
     }
 
     if ((!$global:buildbot) -and (!(Test-Path Env:\BUILD_OUTPUT_FOLDER)))
@@ -436,15 +667,15 @@ function BuildSdkZip()
 
 function BuildBinZip()
 {
-    $7zip =     "${env:ProgramFiles}\7-Zip\7z.exe";
-    $zip_path = "${env:BUILD_OUTPUT_FOLDER}\processhacker-build-bin.zip";
+    $7zip =     "${env:ProgramFiles}\7-Zip\7z.exe"
+    $zip_path = "${env:BUILD_OUTPUT_FOLDER}\processhacker-build-bin.zip"
 
     Write-Host "Building build-bin.zip" -NoNewline -ForegroundColor Cyan
     
     if (!(Test-Path "$7zip"))
     {
         Write-Host "`t[SKIPPED] (7-Zip not installed)" -ForegroundColor Yellow
-        return;
+        return
     }
 
     if (Test-Path "$zip_path")
@@ -504,7 +735,7 @@ function BuildSourceZip()
     if (!(Test-Path "$git"))
     {
         Write-Host "`t[SKIPPED] (Git not installed)" -ForegroundColor Yellow
-        return;
+        return
     }
 
     if ((!$global:buildbot) -and (!(Test-Path Env:\BUILD_OUTPUT_FOLDER)))
@@ -527,15 +758,15 @@ function BuildSourceZip()
 
 function BuildPdbZip()
 {
-    $7zip =     "${env:ProgramFiles}\7-Zip\7z.exe";
-    $zip_path = "${env:BUILD_OUTPUT_FOLDER}\processhacker-build-pdb.zip";
+    $7zip =     "${env:ProgramFiles}\7-Zip\7z.exe"
+    $zip_path = "${env:BUILD_OUTPUT_FOLDER}\processhacker-build-pdb.zip"
 
     Write-Host "Building build-pdb.zip" -NoNewline -ForegroundColor Cyan
     
     if (!(Test-Path "$7zip"))
     {
         Write-Host "`t[SKIPPED] (7-Zip not installed)" -ForegroundColor Yellow
-        return;
+        return
     }
 
     if (Test-Path "$zip_path")
@@ -583,8 +814,7 @@ function BuildChecksumsFile()
         "processhacker-build-setup.exe",
         "processhacker-build-sdk.zip",
         "processhacker-build-bin.zip",
-        "processhacker-build-src.zip",
-        "processhacker-build-pdb.zip";  
+        "processhacker-build-src.zip"; # processhacker-build-pdb.zip 
 
     Write-Host "Generating checksums" -NoNewline -ForegroundColor Cyan
 
@@ -599,7 +829,7 @@ function BuildChecksumsFile()
             continue;
         }
 
-        $fileHashes += $file + ": (SHA256)`r`n" + (Get-FileHash "${env:BUILD_OUTPUT_FOLDER}\$file" -Algorithm SHA256).Hash + "`r`n`r`n";
+        $fileHashes += $file + ": (SHA256)`r`n" + (Get-FileHash "${env:BUILD_OUTPUT_FOLDER}\$file" -Algorithm SHA256).Hash + "`r`n`r`n"
     }
 
     if (Test-Path "${env:BUILD_OUTPUT_FOLDER}\processhacker-build-checksums.txt")
@@ -610,14 +840,48 @@ function BuildChecksumsFile()
     # Convert the Arraylist to a string and save the string
     $fileHashes | Out-String | Out-File "${env:BUILD_OUTPUT_FOLDER}\processhacker-build-checksums.txt"
 
-    Write-Host "          [SUCCESS]" -ForegroundColor Green
+    Write-Host "        [SUCCESS]" -ForegroundColor Green
 }
 
-function BuildSignaturesFile()
+function BuildSetupSignature()
 {
-    Write-Host "Setting up signature files" -NoNewline -ForegroundColor Cyan
+    $sign_file = "tools\CustomSignTool\bin\Release32\CustomSignTool.exe"
 
-    Write-Host "    [SUCCESS]" -ForegroundColor Green
+    Write-Host "Update build signatures" -NoNewline -ForegroundColor Cyan
+    
+    if ((!$global:buildbot) -and !(Test-Path Env:\VIRUSTOTAL_BUILD_KEY))
+    {
+        Write-Host " [SKIPPED] (VirusTotal build key)" -ForegroundColor Yellow
+        return
+    }
+
+    if (!(Test-Path "build\internal\nightly.key"))
+    {
+        Write-Host " [SKIPPED] (nightly.key)" -ForegroundColor Yellow
+        return
+    }
+
+    if (!(Test-Path "${env:BUILD_OUTPUT_FOLDER}\processhacker-build-setup.exe"))
+    {
+        Write-Host " [SKIPPED] (processhacker-setup.exe)" -ForegroundColor Yellow
+        return
+    }
+
+    $global:signature_output = ( & "$sign_file" "sign", 
+        "-k", 
+        "build\internal\nightly.key", 
+        "${env:BUILD_OUTPUT_FOLDER}\processhacker-build-setup.exe", 
+        "-h" | Out-String) -replace "`n|`r"
+
+    if ($LASTEXITCODE -eq 0)
+    {
+        Write-Host "     [SUCCESS]" -ForegroundColor Green
+    }
+    else
+    {
+        Write-Host "     [ERROR] ($global:signature_output)" -ForegroundColor Red
+        exit 4
+    }
 }
 
 function UpdateBuildService()
@@ -627,97 +891,100 @@ function UpdateBuildService()
     $sdkZip =   "${env:BUILD_OUTPUT_FOLDER}\processhacker-build-sdk.zip"
     $binZip =   "${env:BUILD_OUTPUT_FOLDER}\processhacker-build-bin.zip"
     $srcZip =   "${env:BUILD_OUTPUT_FOLDER}\processhacker-build-src.zip" 
-    $pdbZip =   "${env:BUILD_OUTPUT_FOLDER}\processhacker-build-pdb.zip" 
+    #$pdbZip =   "${env:BUILD_OUTPUT_FOLDER}\processhacker-build-pdb.zip" 
     $checksums ="${env:BUILD_OUTPUT_FOLDER}\processhacker-build-checksums.txt"
 
-    Write-Host "Updating build service" -ForegroundColor Cyan
+    Write-Host "Updating build service" -NoNewline -ForegroundColor Cyan
 
-    if (Test-Path "$git")
+    if ((!(Test-Path Env:\APPVEYOR_BUILD_API)) -and (!(Test-Path Env:\APPVEYOR_BUILD_KEY)))
     {
-        $latestGitMessage =  (& "$git" "log", "-n", "5", "--pretty=%B") | Out-String
-        $latestGitTag =      (& "$git" "describe", "--abbrev=0", "--tags", "--always") | Out-String
-        #$latestGitCount =   (& "$git" "rev-list", "--count", "master") | Out-String
-        $latestGitRevision = (& "$git" "rev-list", "--count", ($latestGitTag.Trim() + "..master")) | Out-String
-        
-        $buildMessage = $latestGitMessage -Replace "`r`n`r`n", "`r`n"
-        $fileVersion = "3.0." + $latestGitRevision.Trim() #${env:APPVEYOR_BUILD_VERSION}
+        Write-Host "      [SKIPPED] (Build service key)" -ForegroundColor Yellow
+        return
     }
 
-    if (Test-Path "$binZip")
+    if (Test-Path "$exeSetup")
     {
-        $fileInfo = (Get-Item "$binZip");
-        $fileTime = $fileInfo.CreationTime.ToString("yyyy-MM-ddTHH:mm:sszzz");
+        $fileInfo = (Get-Item "$exeSetup")
+        $fileTime = $fileInfo.CreationTime.ToString("yyyy-MM-ddTHH:mm:sszzz")
         $fileSize = $fileInfo.Length;
     }
 
-    if ($array)
+    if ($array) 
     {
         $exeHash = $array[0].Hash;
         $sdkHash = $array[1].Hash;
         $binHash = $array[2].Hash;
         $srcHash = $array[3].Hash;
-        $pdbHash = $array[4].Hash;
+        #$pdbHash = $array[4].Hash;
     }
     else
     {
-        if (Test-Path "$exeSetup")
+        if (Test-Path $exeSetup)
         {
-            $exeHash = (Get-FileHash "$exeSetup" -Algorithm SHA256).Hash;
+            $exeHash = (Get-FileHash "$exeSetup" -Algorithm SHA256).Hash
         }
 
         if (Test-Path "$sdkZip")
         {
-            $sdkHash = (Get-FileHash "$sdkZip" -Algorithm SHA256).Hash;
+            $sdkHash = (Get-FileHash "$sdkZip" -Algorithm SHA256).Hash
         }
 
         if (Test-Path "$binZip")
         {
-            $binHash = (Get-FileHash "$binZip" -Algorithm SHA256).Hash;
+            $binHash = (Get-FileHash "$binZip" -Algorithm SHA256).Hash
         }
         
         if (Test-Path "$srcZip")
         {
-            $srcHash = (Get-FileHash "$srcZip" -Algorithm SHA256).Hash;
+            $srcHash = (Get-FileHash "$srcZip" -Algorithm SHA256).Hash
         }
 
-        if (Test-Path "$pdbZip")
-        {
-            $pdbHash = (Get-FileHash "$pdbZip" -Algorithm SHA256).Hash;
-        }
+        #if (Test-Path "$pdbZip")
+        #$pdbHash = (Get-FileHash "$pdbZip" -Algorithm SHA256).Hash;
     }
 
-    if ($buildMessage -and $exeHash -and $sdkHash -and $binHash -and $srcHash -and $pdbHash -and $fileTime -and $fileSize -and $fileVersion)
+    if ($global:signature_output -and $global:buildMessage -and $exeHash -and $sdkHash -and $binHash -and $srcHash -and $fileTime -and $fileSize -and $global:fileVersion)
     {
         $jsonString = @{
-            "version"="$fileVersion"
+            "version"="$global:fileVersion"
             "size"="$fileSize"
             "updated"="$fileTime"
             "forum_url"="https://wj32.org/processhacker/forums/viewtopic.php?t=2315"
-            "bin_url"="https://ci.appveyor.com/api/projects/processhacker/processhacker2/artifacts/processhacker-$fileVersion-bin.zip"
-            "setup_url"="https://ci.appveyor.com/api/projects/processhacker/processhacker2/artifacts/processhacker-$fileVersion-setup.exe"
+            "bin_url"="https://ci.appveyor.com/api/projects/processhacker/processhacker2/artifacts/processhacker-$global:fileVersion-bin.zip"
+            "setup_url"="https://ci.appveyor.com/api/projects/processhacker/processhacker2/artifacts/processhacker-$global:fileVersion-setup.exe"
             "hash_setup"="$exeHash"
             "hash_sdk"="$sdkHash"
             "hash_bin"="$binHash"
             "hash_src"="$srcHash"
-            "hash_pdb"="$pdbHash"
-            "message"="$buildMessage"
-        } | ConvertTo-Json | Out-String;
+            "message"="$global:buildMessage"
+            "sig"="$global:signature_output"
+        } | ConvertTo-Json | Out-String
 
-        Rename-Item "$exeSetup"  "processhacker-$fileVersion-setup.exe" -Force -ErrorAction SilentlyContinue
-        Rename-Item "$sdkZip"    "processhacker-$fileVersion-sdk.zip" -Force
-        Rename-Item "$binZip"    "processhacker-$fileVersion-bin.zip" -Force
-        Rename-Item "$srcZip"    "processhacker-$fileVersion-src.zip" -Force
-        Rename-Item "$pdbZip"    "processhacker-$fileVersion-pdb.zip" -Force
-        Rename-Item "$checksums" "processhacker-$fileVersion-checksums.txt" -Force
+        Remove-Item "${env:BUILD_OUTPUT_FOLDER}\processhacker-$global:fileVersion-setup.exe" -Force -ErrorAction SilentlyContinue
+        Remove-Item "${env:BUILD_OUTPUT_FOLDER}\processhacker-$global:fileVersion-sdk.zip" -Force -ErrorAction SilentlyContinue
+        Remove-Item "${env:BUILD_OUTPUT_FOLDER}\processhacker-$global:fileVersion-bin.zip" -Force -ErrorAction SilentlyContinue
+        Remove-Item "${env:BUILD_OUTPUT_FOLDER}\processhacker-$global:fileVersion-src.zip" -Force -ErrorAction SilentlyContinue
+        #Remove-Item "${env:BUILD_OUTPUT_FOLDER}\processhacker-$global:fileVersion-pdb.zip" -Force -ErrorAction SilentlyContinue
+        Remove-Item "${env:BUILD_OUTPUT_FOLDER}\processhacker-$global:fileVersion-checksums.txt" -Force -ErrorAction SilentlyContinue
 
-        if ($global:buildbot)
+        Rename-Item "$exeSetup"  "processhacker-$global:fileVersion-setup.exe" -Force 
+        Rename-Item "$sdkZip"    "processhacker-$global:fileVersion-sdk.zip" -Force
+        Rename-Item "$binZip"    "processhacker-$global:fileVersion-bin.zip" -Force
+        Rename-Item "$srcZip"    "processhacker-$global:fileVersion-src.zip" -Force
+        #Rename-Item "$pdbZip"    "processhacker-$global:fileVersion-pdb.zip" -Force
+        Rename-Item "$checksums" "processhacker-$global:fileVersion-checksums.txt" -Force
+
+        if (($global:buildbot) -and (Test-Path Env:\APPVEYOR_BUILD_API))
         {
-            Push-AppveyorArtifact "${env:BUILD_OUTPUT_FOLDER}\processhacker-$fileVersion-setup.exe" -ErrorAction SilentlyContinue
-            Push-AppveyorArtifact "${env:BUILD_OUTPUT_FOLDER}\processhacker-$fileVersion-sdk.zip"
-            Push-AppveyorArtifact "${env:BUILD_OUTPUT_FOLDER}\processhacker-$fileVersion-bin.zip"
-            Push-AppveyorArtifact "${env:BUILD_OUTPUT_FOLDER}\processhacker-$fileVersion-src.zip"
-            Push-AppveyorArtifact "${env:BUILD_OUTPUT_FOLDER}\processhacker-$fileVersion-pdb.zip"
-            Push-AppveyorArtifact "${env:BUILD_OUTPUT_FOLDER}\processhacker-$fileVersion-checksums.txt"
+            if (Get-Command "Push-AppveyorArtifact" -ErrorAction SilentlyContinue)
+            {
+                Push-AppveyorArtifact "${env:BUILD_OUTPUT_FOLDER}\processhacker-$global:fileVersion-setup.exe" -ErrorAction SilentlyContinue
+                Push-AppveyorArtifact "${env:BUILD_OUTPUT_FOLDER}\processhacker-$global:fileVersion-sdk.zip" -ErrorAction SilentlyContinue
+                Push-AppveyorArtifact "${env:BUILD_OUTPUT_FOLDER}\processhacker-$global:fileVersion-bin.zip" -ErrorAction SilentlyContinue
+                Push-AppveyorArtifact "${env:BUILD_OUTPUT_FOLDER}\processhacker-$global:fileVersion-src.zip" -ErrorAction SilentlyContinue
+                #Push-AppveyorArtifact "${env:BUILD_OUTPUT_FOLDER}\processhacker-$global:fileVersion-pdb.zip" -ErrorAction SilentlyContinue
+                Push-AppveyorArtifact "${env:BUILD_OUTPUT_FOLDER}\processhacker-$global:fileVersion-checksums.txt" -ErrorAction SilentlyContinue
+            }
         }
 
         if ((Test-Path Env:\APPVEYOR_BUILD_API) -and (Test-Path Env:\APPVEYOR_BUILD_KEY))
@@ -739,15 +1006,34 @@ function ShowBuildTime()
 {
     $timeEnd = New-TimeSpan -Start $global:TimeStart -End $(Get-Date)
 
-    Write-Host "";
-    Write-Host "Build Time: $($timeEnd.Minutes) minute(s), $($timeEnd.Seconds) second(s)";
+    Write-Host ""
+    Write-Host "Build Time: $($timeEnd.Minutes) minute(s), $($timeEnd.Seconds) second(s)"
 }
 
-# Entry point
+function BuildCleanup()
+{
+    Write-Host "Cleaning up..." -ForegroundColor Cyan
+
+    if ($global:buildbot)
+    {
+		Clear-Content "build\internal\kph.key" -Force -ErrorAction SilentlyContinue
+		Clear-Content "build\internal\nightly.key" -Force -ErrorAction SilentlyContinue
+		Clear-Content "plugins\OnlineChecks\virustotal.h" -Force -ErrorAction SilentlyContinue
+	
+        Remove-Item "build\internal\kph.key" -Force -ErrorAction SilentlyContinue
+        Remove-Item "build\internal\nightly.key" -Force -ErrorAction SilentlyContinue
+        Remove-Item "plugins\OnlineChecks\virustotal.h" -Force -ErrorAction SilentlyContinue
+    }
+}
+
+# Setup the build script environment
 InitializeScriptEnvironment;
 
-# Check if the current directory contains the main solution
-CheckBaseDirectory;
+# Setup the build version
+InitializeBuildEnvironment;
+
+# Decrypt build files
+SetupSignatureFiles;
 
 # Build the main solution
 BuildSolution("ProcessHacker.sln");
@@ -768,19 +1054,27 @@ BuildSolution("plugins\Plugins.sln");
 # Setup the x86 plugin files
 SetupProcessHackerWow64;
 
+# Build KPH release signature
+BuildKphSignature;
+
 # Build the release files
 BuildSetupExe;
 BuildSdkZip;
 BuildBinZip;
 BuildSourceZip;
-BuildPdbZip;
+#BuildPdbZip;
 
 # Build the checksums
 BuildChecksumsFile;
-BuildSignaturesFile;
+
+# Build nightly release signature
+BuildSetupSignature;
 
 # Update the build service
 UpdateBuildService;
 
-#
+# Clean up sensitive files
+BuildCleanup;
+
+# Show the total build time
 ShowBuildTime;

@@ -70,7 +70,7 @@ PPH_STRING DiskDriveQueryDosMountPoints(
     WCHAR deviceNameBuffer[7] = L"\\\\.\\?:";
     PH_STRING_BUILDER stringBuilder;
 
-    PhInitializeStringBuilder(&stringBuilder, MAX_PATH);
+    PhInitializeStringBuilder(&stringBuilder, DOS_MAX_PATH_LENGTH);
 
     driveMask = DiskDriveQueryDeviceMap();
 
@@ -122,68 +122,6 @@ PPH_STRING DiskDriveQueryDosMountPoints(
 
     return PhFinalStringBuilderString(&stringBuilder);
 }
-
-PPH_LIST DiskDriveQueryMountPointHandles(
-    _In_ ULONG DeviceNumber
-    )
-{
-    ULONG driveMask;
-    PPH_LIST deviceList;
-    WCHAR deviceNameBuffer[7] = L"\\\\.\\?:";
-
-    driveMask = DiskDriveQueryDeviceMap();
-    deviceList = PhCreateList(2);
-
-    // NOTE: This isn't the best way of doing this but it works.
-    for (INT i = 0; i < 0x1A; i++)
-    {
-        if (driveMask & (0x1 << i))
-        {
-            HANDLE deviceHandle;
-
-            deviceNameBuffer[4] = (WCHAR)('A' + i);
-
-            if (NT_SUCCESS(PhCreateFileWin32(
-                &deviceHandle,
-                deviceNameBuffer,
-                PhGetOwnTokenAttributes().Elevated ? FILE_GENERIC_READ : FILE_READ_ATTRIBUTES | FILE_TRAVERSE | SYNCHRONIZE,
-                FILE_ATTRIBUTE_NORMAL,
-                FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
-                FILE_OPEN,
-                FILE_NON_DIRECTORY_FILE | FILE_SYNCHRONOUS_IO_NONALERT
-                )))
-            {
-                ULONG deviceNumber = ULONG_MAX; // Note: Do not initialize to zero.
-                DEVICE_TYPE deviceType = 0;
-
-                if (NT_SUCCESS(DiskDriveQueryDeviceTypeAndNumber(
-                    deviceHandle,
-                    &deviceNumber,
-                    &deviceType
-                    )))
-                {
-                    // BUG: Device numbers are re-used on seperate device controllers and this
-                    // causes drive letters to be assigned to disks at those same indexes.
-                    // For now, just filter CD_ROM devices but we may need to be a lot more strict and
-                    // only allow devices of type FILE_DEVICE_DISK to be scanned for mount points.
-                    if (deviceNumber == DeviceNumber && deviceType != FILE_DEVICE_CD_ROM)
-                    {
-                        PDISK_HANDLE_ENTRY entry = PhAllocate(sizeof(DISK_HANDLE_ENTRY));
-                        memset(entry, 0, sizeof(DISK_HANDLE_ENTRY));
-
-                        entry->DeviceLetter = deviceNameBuffer[4];
-                        entry->DeviceHandle = deviceHandle;
-
-                        PhAddItemList(deviceList, entry);
-                    }
-                }
-            }
-        }
-    }
-
-    return deviceList;
-}
-
 
 BOOLEAN DiskDriveQueryAdapterInformation(
     _In_ HANDLE DeviceHandle
@@ -568,7 +506,7 @@ NTSTATUS DiskDriveQueryDeviceTypeAndNumber(
         NULL,
         NULL,
         &isb,
-        IOCTL_STORAGE_GET_DEVICE_NUMBER, // https://msdn.microsoft.com/en-us/library/bb968800.aspx
+        IOCTL_STORAGE_GET_DEVICE_NUMBER,
         NULL,
         0,
         &result,
@@ -609,7 +547,7 @@ NTSTATUS DiskDriveQueryStatistics(
         NULL,
         NULL,
         &isb,
-        IOCTL_DISK_PERFORMANCE, // https://msdn.microsoft.com/en-us/library/aa365183.aspx
+        IOCTL_DISK_PERFORMANCE,
         NULL,
         0,
         &result,
@@ -641,7 +579,7 @@ PPH_STRING DiskDriveQueryGeometry(
         NULL,
         NULL,
         &isb,
-        IOCTL_DISK_GET_DRIVE_GEOMETRY, // https://msdn.microsoft.com/en-us/library/aa365169.aspx
+        IOCTL_DISK_GET_DRIVE_GEOMETRY,
         NULL,
         0,
         &result,
@@ -676,7 +614,7 @@ BOOLEAN DiskDriveQueryImminentFailure(
         NULL,
         NULL,
         &isb,
-        IOCTL_STORAGE_PREDICT_FAILURE, // https://msdn.microsoft.com/en-us/library/ff560587.aspx
+        IOCTL_STORAGE_PREDICT_FAILURE,
         NULL,
         0,
         &storagePredictFailure,
@@ -1382,8 +1320,6 @@ PWSTR SmartAttributeGetText(
     _In_ SMART_ATTRIBUTE_ID AttributeId
     )
 {
-    // from https://en.wikipedia.org/wiki/S.M.A.R.T
-
     switch (AttributeId)
     {
     case SMART_ATTRIBUTE_ID_READ_ERROR_RATE: // Critical
@@ -1492,7 +1428,7 @@ PWSTR SmartAttributeGetText(
         return L"GMR Head Amplitude";
     case SMART_ATTRIBUTE_ID_DRIVE_TEMPERATURE:
         return L"Temperature";
-    case SMART_ATTRIBUTE_ID_HEAD_FLYING_HOURS: // Transfer Error Rate (Fujitsu)
+    case SMART_ATTRIBUTE_ID_HEAD_FLYING_HOURS:
         return L"Head Flying Hours";
     case SMART_ATTRIBUTE_ID_TOTAL_LBA_WRITTEN:
         return L"Total LBAs Written";
@@ -1504,14 +1440,15 @@ PWSTR SmartAttributeGetText(
         return L"Free Fall Protection";
     }
 
-    return L"BUG BUG BUG";
+    return L"Unknown";
 }
 
 PWSTR SmartAttributeGetDescription(
     _In_ SMART_ATTRIBUTE_ID AttributeId
     )
 {
-    // from https://en.wikipedia.org/wiki/S.M.A.R.T
+    // https://en.wikipedia.org/wiki/S.M.A.R.T
+
     switch (AttributeId)
     {
     case SMART_ATTRIBUTE_ID_READ_ERROR_RATE:
@@ -1632,5 +1569,5 @@ PWSTR SmartAttributeGetDescription(
         return L"";
     }
 
-    return L"";
+    return L"Unknown";
 }

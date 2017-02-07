@@ -49,7 +49,6 @@ REBAR_DISPLAY_LOCATION RebarDisplayLocation = REBAR_DISPLAY_LOCATION_TOP;
 HWND RebarHandle = NULL;
 HWND ToolBarHandle = NULL;
 HWND SearchboxHandle = NULL;
-HWND SearchEditHandle = NULL;
 HMENU MainMenu = NULL;
 HACCEL AcceleratorTable = NULL;
 PPH_STRING SearchboxText = NULL;
@@ -406,19 +405,19 @@ VOID NTAPI TabPageUpdatedCallback(
 
     SelectedTabIndex = tabIndex;
 
-    if (!SearchEditHandle)
+    if (!SearchboxHandle)
         return;
 
     switch (tabIndex)
     {
     case 0:
-        Edit_SetCueBannerText(SearchEditHandle, L"Search Processes (Ctrl+K)");
+        Edit_SetCueBannerText(SearchboxHandle, L"Search Processes (Ctrl+K)");
         break;
     case 1:
-        Edit_SetCueBannerText(SearchEditHandle, L"Search Services (Ctrl+K)");
+        Edit_SetCueBannerText(SearchboxHandle, L"Search Services (Ctrl+K)");
         break;
     case 2:
-        Edit_SetCueBannerText(SearchEditHandle, L"Search Network (Ctrl+K)");
+        Edit_SetCueBannerText(SearchboxHandle, L"Search Network (Ctrl+K)");
         break;
     default:
         {
@@ -426,12 +425,12 @@ VOID NTAPI TabPageUpdatedCallback(
 
             if ((tabInfo = FindTabInfo(tabIndex)) && tabInfo->BannerText)
             {
-                Edit_SetCueBannerText(SearchEditHandle, PhaConcatStrings2(tabInfo->BannerText, L" (Ctrl+K)")->Buffer);
+                Edit_SetCueBannerText(SearchboxHandle, PhaConcatStrings2(tabInfo->BannerText, L" (Ctrl+K)")->Buffer);
             }
             else
             {
                 // Disable the textbox if we're on an unsupported tab.
-                Edit_SetCueBannerText(SearchEditHandle, L"Search disabled");
+                Edit_SetCueBannerText(SearchboxHandle, L"Search disabled");
             }
         }
         break;
@@ -637,15 +636,16 @@ LRESULT CALLBACK MainWndSubclassProc(
             switch (GET_WM_COMMAND_CMD(wParam, lParam))
             {
             case EN_CHANGE:
-            case CBN_EDITUPDATE:
-            case CBN_EDITCHANGE:
                 {
                     PPH_STRING newSearchboxText;
+
+                    if (!SearchboxHandle)
+                        break;
 
                     if (GET_WM_COMMAND_HWND(wParam, lParam) != SearchboxHandle)
                         break;
 
-                    newSearchboxText = PH_AUTO(PhGetWindowText(SearchEditHandle));
+                    newSearchboxText = PH_AUTO(PhGetWindowText(SearchboxHandle));
 
                     if (!PhEqualString(SearchboxText, newSearchboxText, FALSE))
                     {
@@ -670,7 +670,6 @@ LRESULT CALLBACK MainWndSubclassProc(
                     goto DefaultWndProc;
                 }
                 break;
-            case CBN_KILLFOCUS:
             case EN_KILLFOCUS:
                 {
                     if (GET_WM_COMMAND_HWND(wParam, lParam) != SearchboxHandle)
@@ -686,14 +685,6 @@ LRESULT CALLBACK MainWndSubclassProc(
                     }
 
                     goto DefaultWndProc;
-                }
-                break;
-            case CBN_SELCHANGE:
-                {
-                    if (GET_WM_COMMAND_HWND(wParam, lParam) != SearchboxHandle)
-                        break;
-
-                    PostMessage(hWnd, WM_COMMAND, MAKEWPARAM(0, EN_CHANGE), (LPARAM)SearchboxHandle);
                 }
                 break;
             }
@@ -716,24 +707,20 @@ LRESULT CALLBACK MainWndSubclassProc(
             case ID_SEARCH:
                 {
                     // handle keybind Ctrl + K
-                    if (SearchEditHandle && ToolStatusConfig.SearchBoxEnabled)
+                    if (SearchboxHandle && ToolStatusConfig.SearchBoxEnabled)
                     {
-                        SetFocus(SearchEditHandle);
-                        Edit_SetSel(SearchEditHandle, 0, -1);
-                    }
+                        if (SearchBoxDisplayMode == SEARCHBOX_DISPLAY_MODE_HIDEINACTIVE)
+                        {
+                            if (!RebarBandExists(REBAR_BAND_ID_SEARCHBOX))
+                                RebarBandInsert(REBAR_BAND_ID_SEARCHBOX, SearchboxHandle, PhMultiplyDivide(180, PhGlobalDpi, 96), 22);
 
-                    goto DefaultWndProc;
-                }
-                break;
-            case ID_SEARCH_CLEAR:
-                {
-                    if (SearchEditHandle && ToolStatusConfig.SearchBoxEnabled)
-                    {
-                        SetFocus(SearchEditHandle);
-                        Static_SetText(SearchEditHandle, L"");
-                    }
+                            if (!IsWindowVisible(SearchboxHandle))
+                                ShowWindow(SearchboxHandle, SW_SHOW);
+                        }
 
-                    SendMessage(hWnd, WM_COMMAND, MAKEWPARAM(0, EN_CHANGE), (LPARAM)SearchboxHandle);
+                        SetFocus(SearchboxHandle);
+                        Edit_SetSel(SearchboxHandle, 0, -1);
+                    }
 
                     goto DefaultWndProc;
                 }
@@ -1262,7 +1249,7 @@ LRESULT CALLBACK MainWndSubclassProc(
         break;
     case WM_SETTINGCHANGE:
         // Forward to the Searchbox so we can reinitialize the settings...
-        SendMessage(SearchEditHandle, WM_SETTINGCHANGE, 0, 0);
+        SendMessage(SearchboxHandle, WM_SETTINGCHANGE, 0, 0);
         break;
     case WM_SHOWWINDOW:
         {
@@ -1304,6 +1291,64 @@ LRESULT CALLBACK MainWndSubclassProc(
             if (GetMenu(PhMainWndHandle))
             {
                 SetMenu(PhMainWndHandle, NULL);
+            }
+        }
+        break;
+    case WM_MEASUREITEM:
+        {
+            LPMEASUREITEMSTRUCT drawInfo = (LPMEASUREITEMSTRUCT)lParam;
+
+            if (drawInfo->CtlType == ODT_COMBOBOX)
+            {
+                drawInfo->itemHeight = 16;
+            }
+        }
+        break;
+    case WM_DRAWITEM:
+        {
+            LPDRAWITEMSTRUCT drawInfo = (LPDRAWITEMSTRUCT)lParam;
+
+            if (drawInfo->hwndItem == SearchboxHandle && drawInfo->CtlType == ODT_COMBOBOX)
+            {
+                INT length;
+                PPH_STRING text;
+
+                if (!(length = ComboBox_GetLBTextLen(drawInfo->hwndItem, drawInfo->itemID)))
+                    break;
+
+                SetBkMode(drawInfo->hDC, TRANSPARENT);
+
+                if ((drawInfo->itemState & CDIS_SELECTED) == CDIS_SELECTED)
+                {
+                    SetTextColor(drawInfo->hDC, GetSysColor(COLOR_HIGHLIGHTTEXT));
+                    SetDCBrushColor(drawInfo->hDC, RGB(78, 78, 78));
+
+                    FillRect(drawInfo->hDC, &drawInfo->rcItem, GetStockObject(DC_BRUSH));
+                }
+                else
+                {
+                    SetTextColor(drawInfo->hDC, RGB(0x0, 0x0, 0x0));
+                    SetDCBrushColor(drawInfo->hDC, RGB(0xff, 0xff, 0xff));
+
+                    FillRect(drawInfo->hDC, &drawInfo->rcItem, GetStockObject(DC_BRUSH));
+
+                    //SetDCBrushColor(drawInfo->hDC, RGB(0xff, RGB(43, 43, 43));
+                    //SetTextColor(drawInfo->hDC, GetSysColor(COLOR_HIGHLIGHTTEXT));
+                }
+
+                text = PhCreateStringEx(NULL, length * sizeof(WCHAR));
+                ComboBox_GetLBText(drawInfo->hwndItem, drawInfo->itemID, text->Buffer);
+
+                drawInfo->rcItem.left += 5;
+                DrawText(
+                    drawInfo->hDC,
+                    text->Buffer,
+                    (INT)text->Length / sizeof(WCHAR),
+                    &drawInfo->rcItem,
+                    DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_WORD_ELLIPSIS
+                    );
+
+                PhDereferenceObject(text);
             }
         }
         break;
@@ -1372,7 +1417,7 @@ LOGICAL DllMain(
             PPH_PLUGIN_INFORMATION info;
             PH_SETTING_CREATE settings[] =
             {
-                { IntegerSettingType, SETTING_NAME_TOOLSTATUS_CONFIG, L"3F" },
+                { IntegerSettingType, SETTING_NAME_TOOLSTATUS_CONFIG, L"1F" },
                 { IntegerSettingType, SETTING_NAME_TOOLBAR_THEME, L"0" },
                 { IntegerSettingType, SETTING_NAME_TOOLBARDISPLAYSTYLE, L"1" },
                 { IntegerSettingType, SETTING_NAME_SEARCHBOXDISPLAYMODE, L"0" },

@@ -172,29 +172,7 @@ VOID RebarLoadSettings(
         ServiceTreeFilterEntry = PhAddTreeNewFilter(PhGetFilterSupportServiceTreeList(), (PPH_TN_FILTER_FUNCTION)ServiceTreeFilterCallback, NULL);
         NetworkTreeFilterEntry = PhAddTreeNewFilter(PhGetFilterSupportNetworkTreeList(), (PPH_TN_FILTER_FUNCTION)NetworkTreeFilterCallback, NULL);
 
-        if (CreateSearchControl(ID_SEARCH_CLEAR))
-        {
-            //ComboBox_AddString(SearchboxHandle, L"");
-            ComboBox_AddString(SearchboxHandle, L"NoSignature");
-            ComboBox_AddString(SearchboxHandle, L"Trusted");
-            ComboBox_AddString(SearchboxHandle, L"Expired");
-            ComboBox_AddString(SearchboxHandle, L"Revoked");
-            ComboBox_AddString(SearchboxHandle, L"Distrust");
-            ComboBox_AddString(SearchboxHandle, L"BadSignature");
-            ComboBox_AddString(SearchboxHandle, L"Unknown");
-            ComboBox_AddString(SearchboxHandle, L"Limited");
-            ComboBox_AddString(SearchboxHandle, L"Full");
-            ComboBox_AddString(SearchboxHandle, L"IsBeingDebugged");
-            ComboBox_AddString(SearchboxHandle, L"IsDotNet");
-            ComboBox_AddString(SearchboxHandle, L"IsElevated");
-            ComboBox_AddString(SearchboxHandle, L"IsInJob");
-            ComboBox_AddString(SearchboxHandle, L"IsInSignificantJob");
-            ComboBox_AddString(SearchboxHandle, L"IsPacked");
-            ComboBox_AddString(SearchboxHandle, L"IsSuspended");
-            ComboBox_AddString(SearchboxHandle, L"IsWow64");
-            ComboBox_AddString(SearchboxHandle, L"IsImmersive");
-            PhSelectComboBoxString(SearchboxHandle, L"", FALSE);
-        }
+        CreateSearchboxControl();
     }
 
     if (ToolStatusConfig.StatusBarEnabled && !StatusBarHandle)
@@ -251,8 +229,8 @@ VOID RebarLoadSettings(
         if (SearchboxHandle)
         {
             // Clear search text and reset search filters.
-            SetFocus(SearchEditHandle);
-            Static_SetText(SearchEditHandle, L"");
+            SetFocus(SearchboxHandle);
+            Static_SetText(SearchboxHandle, L"");
 
             if (IsWindowVisible(SearchboxHandle))
                 ShowWindow(SearchboxHandle, SW_HIDE);
@@ -464,7 +442,7 @@ HBITMAP ToolbarGetImage(
 
             if (ToolStatusConfig.ModernIcons)
             {
-                toolbarBitmap = LoadImageFromResources(ToolBarImageSize.cx, ToolBarImageSize.cy, MAKEINTRESOURCE(IDB_ARROW_REFRESH_MODERN), FALSE);
+                toolbarBitmap = LoadImageFromResources(PluginInstance->DllBase, ToolBarImageSize.cx, ToolBarImageSize.cy, MAKEINTRESOURCE(IDB_ARROW_REFRESH_MODERN), FALSE);
             }
             else
             {
@@ -480,7 +458,7 @@ HBITMAP ToolbarGetImage(
 
             if (ToolStatusConfig.ModernIcons)
             {
-                toolbarBitmap = LoadImageFromResources(ToolBarImageSize.cx, ToolBarImageSize.cy, MAKEINTRESOURCE(IDB_COG_EDIT_MODERN), FALSE);
+                toolbarBitmap = LoadImageFromResources(PluginInstance->DllBase, ToolBarImageSize.cx, ToolBarImageSize.cy, MAKEINTRESOURCE(IDB_COG_EDIT_MODERN), FALSE);
             }
             else
             {
@@ -496,7 +474,7 @@ HBITMAP ToolbarGetImage(
 
             if (ToolStatusConfig.ModernIcons)
             {
-                toolbarBitmap = LoadImageFromResources(ToolBarImageSize.cx, ToolBarImageSize.cy, MAKEINTRESOURCE(IDB_FIND_MODERN), FALSE);
+                toolbarBitmap = LoadImageFromResources(PluginInstance->DllBase, ToolBarImageSize.cx, ToolBarImageSize.cy, MAKEINTRESOURCE(IDB_FIND_MODERN), FALSE);
             }
             else
             {
@@ -512,7 +490,7 @@ HBITMAP ToolbarGetImage(
 
             if (ToolStatusConfig.ModernIcons)
             {
-                toolbarBitmap = LoadImageFromResources(ToolBarImageSize.cx, ToolBarImageSize.cy, MAKEINTRESOURCE(IDB_CHART_LINE_MODERN), FALSE);
+                toolbarBitmap = LoadImageFromResources(PluginInstance->DllBase, ToolBarImageSize.cx, ToolBarImageSize.cy, MAKEINTRESOURCE(IDB_CHART_LINE_MODERN), FALSE);
             }
             else
             {
@@ -528,7 +506,7 @@ HBITMAP ToolbarGetImage(
 
             if (ToolStatusConfig.ModernIcons)
             {
-                toolbarBitmap = LoadImageFromResources(ToolBarImageSize.cx, ToolBarImageSize.cy, MAKEINTRESOURCE(IDB_APPLICATION_MODERN), FALSE);
+                toolbarBitmap = LoadImageFromResources(PluginInstance->DllBase, ToolBarImageSize.cx, ToolBarImageSize.cy, MAKEINTRESOURCE(IDB_APPLICATION_MODERN), FALSE);
             }
             else
             {
@@ -544,7 +522,7 @@ HBITMAP ToolbarGetImage(
 
             if (ToolStatusConfig.ModernIcons)
             {
-                toolbarBitmap = LoadImageFromResources(ToolBarImageSize.cx, ToolBarImageSize.cy, MAKEINTRESOURCE(IDB_APPLICATION_GO_MODERN), FALSE);
+                toolbarBitmap = LoadImageFromResources(PluginInstance->DllBase, ToolBarImageSize.cx, ToolBarImageSize.cy, MAKEINTRESOURCE(IDB_APPLICATION_GO_MODERN), FALSE);
             }
             else
             {
@@ -560,7 +538,7 @@ HBITMAP ToolbarGetImage(
 
             if (ToolStatusConfig.ModernIcons)
             {
-                toolbarBitmap = LoadImageFromResources(ToolBarImageSize.cx, ToolBarImageSize.cy, MAKEINTRESOURCE(IDB_CROSS_MODERN), FALSE);
+                toolbarBitmap = LoadImageFromResources(PluginInstance->DllBase, ToolBarImageSize.cx, ToolBarImageSize.cy, MAKEINTRESOURCE(IDB_CROSS_MODERN), FALSE);
             }
             else
             {
@@ -576,7 +554,7 @@ HBITMAP ToolbarGetImage(
 
             if (ToolStatusConfig.ModernIcons)
             {
-                toolbarBitmap = LoadImageFromResources(ToolBarImageSize.cx, ToolBarImageSize.cy, MAKEINTRESOURCE(IDB_APPLICATION_GET_MODERN), FALSE);
+                toolbarBitmap = LoadImageFromResources(PluginInstance->DllBase, ToolBarImageSize.cx, ToolBarImageSize.cy, MAKEINTRESOURCE(IDB_APPLICATION_GET_MODERN), FALSE);
             }
             else
             {
@@ -592,7 +570,7 @@ HBITMAP ToolbarGetImage(
 
             if (ToolStatusConfig.ModernIcons)
             {
-                toolbarBitmap = LoadImageFromResources(ToolBarImageSize.cx, ToolBarImageSize.cy, MAKEINTRESOURCE(IDB_POWER_MODERN), FALSE);
+                toolbarBitmap = LoadImageFromResources(PluginInstance->DllBase, ToolBarImageSize.cx, ToolBarImageSize.cy, MAKEINTRESOURCE(IDB_POWER_MODERN), FALSE);
             }
             else
             {

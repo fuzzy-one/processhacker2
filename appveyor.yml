@@ -23,7 +23,7 @@ matrix:
 # Install inno setup.
 install:
   - choco install -y InnoSetup
-  
+
 # Disable running any test assemblies.
 test: off
 
