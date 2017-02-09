@@ -32,7 +32,6 @@ BEGIN
     CONTROL         "Process Hacker - Setup",IDC_MAINHEADER,"Static",SS_SIMPLE | WS_GROUP,22,26,209,18
     LTEXT           "A free, powerful, multi-purpose tool that helps you monitor system resources, debug software and detect malware.",IDC_SUBHEADER,22,46,211,36
     CONTROL         "",IDC_PROJECT_ICON,"Static",SS_BLACKFRAME,271,15,92,75
-    LTEXT           "Click Next to continue.",IDC_SUBHEADER2,22,98,100,10,NOT WS_VISIBLE
 END
 
 IDD_DIALOG2 DIALOGEX 0, 0, 400, 225
@@ -281,6 +280,24 @@ END
 #endif    // APSTUDIO_INVOKED
 
 #endif    // English (United States) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+/////////////////////////////////////////////////////////////////////////////
+// English (Australia) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENA)
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_AUS
+#pragma code_page(1252)
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// RCDATA
+//
+
+IDR_RCDATA1             RCDATA                  "..\\..\\..\\ClientBin\\processhacker-build-bin.zip"
+
+#endif    // English (Australia) resources
 /////////////////////////////////////////////////////////////////////////////
 
 

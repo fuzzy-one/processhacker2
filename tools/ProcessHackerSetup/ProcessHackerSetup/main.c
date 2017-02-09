@@ -52,10 +52,10 @@ INT WINAPI wWinMain(
     PROPSHEETHEADER propSheetHeader = { sizeof(PROPSHEETHEADER) };
     HPROPSHEETPAGE pages[5];
 
-    if (!NT_SUCCESS(PhInitializePhLibEx(0, 0, 0)))
-        return 1;
-
     CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
+
+    if (!NT_SUCCESS(PhInitializePhLib()))
+        return 1;
 
     PhApplicationName = L"Process Hacker - Setup";
     PhGuiSupportInitialization();

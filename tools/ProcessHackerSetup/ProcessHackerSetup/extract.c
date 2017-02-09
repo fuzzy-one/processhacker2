@@ -2,37 +2,69 @@
 #include <appsup.h>
 #include "lib\miniz\miniz.h"
 
-struct
+typedef struct _SETUP_EXTRACT_FILE
 {
     PSTR FileName;
     PWSTR ExtractFileName;
-} SetupFiles_X64[] =
+} SETUP_EXTRACT_FILE;
+
+SETUP_EXTRACT_FILE SetupFiles_X32[] =
 {
     { "CHANGELOG.txt",                          L"CHANGELOG.txt" },
     { "COPYRIGHT.txt",                          L"COPYRIGHT.txt" },
     { "LICENSE.txt",                            L"LICENSE.txt" },
     { "README.txt",                             L"README.txt" },
 
-    { "x64/peview.exe",                         L"peview.exe" },
-    { "x64/ProcessHacker.exe",                  L"ProcessHacker.exe" },
-    { "x64/kprocesshacker.sys",                 L"kprocesshacker.sys" },
+    { "Release32/peview.exe",                         L"peview.exe" },
+    { "Release32/ProcessHacker.exe",                  L"ProcessHacker.exe" },
+    { "Release32/ProcessHacker.sig",                  L"ProcessHacker.sig" },
+    { "Release32/kprocesshacker.sys",                 L"kprocesshacker.sys" },
 
-    { "x64/plugins/DotNetTools.dll",            L"plugins\\DotNetTools.dll" },
-    { "x64/plugins/ExtendedNotifications.dll",  L"plugins\\ExtendedNotifications.dll" },
-    { "x64/plugins/ExtendedServices.dll",       L"plugins\\ExtendedServices.dll" },
-    { "x64/plugins/ExtendedTools.dll",          L"plugins\\ExtendedTools.dll" },
-    { "x64/plugins/HardwareDevices.dll",        L"plugins\\HardwareDevices.dll" },
-    { "x64/plugins/NetworkTools.dll",           L"plugins\\NetworkTools.dll" },
-    { "x64/plugins/OnlineChecks.dll",           L"plugins\\OnlineChecks.dll" },
-    { "x64/plugins/SbieSupport.dll",            L"plugins\\SbieSupport.dll" },
-    { "x64/plugins/ToolStatus.dll",             L"plugins\\ToolStatus.dll" },
-    { "x64/plugins/Updater.dll",                L"plugins\\Updater.dll" },
-    { "x64/plugins/UserNotes.dll",              L"plugins\\UserNotes.dll" },
-    { "x64/plugins/WindowExplorer.dll",         L"plugins\\WindowExplorer.dll" },
-
-    { "x86/ProcessHacker.exe",                  L"x86\\ProcessHacker.exe" },
-    { "x86/plugins/DotNetTools.dll",            L"x86\\plugins\\DotNetTools.dll" },
+    { "Release32/plugins/CommonUtil.dll",             L"plugins\\CommonUtil.dll" },
+    { "Release32/plugins/DotNetTools.dll",            L"plugins\\DotNetTools.dll" },
+    { "Release32/plugins/ExtendedNotifications.dll",  L"plugins\\ExtendedNotifications.dll" },
+    { "Release32/plugins/ExtendedServices.dll",       L"plugins\\ExtendedServices.dll" },
+    { "Release32/plugins/ExtendedTools.dll",          L"plugins\\ExtendedTools.dll" },
+    { "Release32/plugins/HardwareDevices.dll",        L"plugins\\HardwareDevices.dll" },
+    { "Release32/plugins/NetworkTools.dll",           L"plugins\\NetworkTools.dll" },
+    { "Release32/plugins/OnlineChecks.dll",           L"plugins\\OnlineChecks.dll" },
+    { "Release32/plugins/SbieSupport.dll",            L"plugins\\SbieSupport.dll" },
+    { "Release32/plugins/ToolStatus.dll",             L"plugins\\ToolStatus.dll" },
+    { "Release32/plugins/Updater.dll",                L"plugins\\Updater.dll" },
+    { "Release32/plugins/UserNotes.dll",              L"plugins\\UserNotes.dll" },
+    { "Release32/plugins/WindowExplorer.dll",         L"plugins\\WindowExplorer.dll" },
 };
+
+SETUP_EXTRACT_FILE SetupFiles_X64[] =
+{
+    { "CHANGELOG.txt",                          L"CHANGELOG.txt" },
+    { "COPYRIGHT.txt",                          L"COPYRIGHT.txt" },
+    { "LICENSE.txt",                            L"LICENSE.txt" },
+    { "README.txt",                             L"README.txt" },
+
+    { "Release64/peview.exe",                         L"peview.exe" },
+    { "Release64/ProcessHacker.exe",                  L"ProcessHacker.exe" },
+    { "Release64/ProcessHacker.sig",                  L"ProcessHacker.sig" },
+    { "Release64/kprocesshacker.sys",                 L"kprocesshacker.sys" },
+    
+    { "Release64/plugins/CommonUtil.dll",             L"plugins\\CommonUtil.dll" },
+    { "Release64/plugins/DotNetTools.dll",            L"plugins\\DotNetTools.dll" },
+    { "Release64/plugins/ExtendedNotifications.dll",  L"plugins\\ExtendedNotifications.dll" },
+    { "Release64/plugins/ExtendedServices.dll",       L"plugins\\ExtendedServices.dll" },
+    { "Release64/plugins/ExtendedTools.dll",          L"plugins\\ExtendedTools.dll" },
+    { "Release64/plugins/HardwareDevices.dll",        L"plugins\\HardwareDevices.dll" },
+    { "Release64/plugins/NetworkTools.dll",           L"plugins\\NetworkTools.dll" },
+    { "Release64/plugins/OnlineChecks.dll",           L"plugins\\OnlineChecks.dll" },
+    { "Release64/plugins/SbieSupport.dll",            L"plugins\\SbieSupport.dll" },
+    { "Release64/plugins/ToolStatus.dll",             L"plugins\\ToolStatus.dll" },
+    { "Release64/plugins/Updater.dll",                L"plugins\\Updater.dll" },
+    { "Release64/plugins/UserNotes.dll",              L"plugins\\UserNotes.dll" },
+    { "Release64/plugins/WindowExplorer.dll",         L"plugins\\WindowExplorer.dll" },
+
+    { "Release32/ProcessHacker.exe",                  L"x86\\ProcessHacker.exe" },
+    { "Release32/plugins/DotNetTools.dll",            L"x86\\plugins\\DotNetTools.dll" },
+};
+
 
 
 BOOLEAN SetupExtractBuild(
@@ -62,10 +94,32 @@ BOOLEAN SetupExtractBuild(
 
         // TODO: Move existing folder items.
 
-        if (!(status = mz_zip_reader_init_file(&zip_archive, "processhacker-2.38-bin.zip", 0)))
+        HRSRC resourceHandle;
+        HGLOBAL resourceData;
+        PVOID resourceBuffer;
+
+        if (resourceHandle = FindResource(PhLibImageBase, MAKEINTRESOURCE(IDR_RCDATA1), RT_RCDATA))
         {
-            __leave;
+            ULONG resourceLength = SizeofResource(PhLibImageBase, resourceHandle);
+
+            if (resourceData = LoadResource(PhLibImageBase, resourceHandle))
+            {
+                if (resourceBuffer = LockResource(resourceData))
+                {
+                    if (!(status = mz_zip_reader_init_mem(&zip_archive, resourceBuffer, resourceLength, 0)))
+                    {
+                        __leave;
+                    }
+                }
+            }
+
+            //FreeResource(resourceHandle);
         }
+
+        //if (!(status = mz_zip_reader_init_file(&zip_archive, "processhacker-2.38-bin.zip", 0)))
+        //{
+        //    __leave;
+        //}
 
         // Get filesize information for extract progress
         for (mz_uint i = 0; i < ARRAYSIZE(SetupFiles_X64); i++)
@@ -108,6 +162,23 @@ BOOLEAN SetupExtractBuild(
             mz_uint file_index;
             mz_zip_archive_file_stat file_stat;
             size_t bufferLength = 0;
+
+            file_index = mz_zip_reader_locate_file(
+                &zip_archive,
+                SetupFiles_X64[i].FileName,
+                NULL,
+                0
+                );
+
+            if (file_index == -1)
+            {
+                __leave;
+            }
+
+            if (!mz_zip_reader_file_stat(&zip_archive, file_index, &file_stat))
+            {
+                __leave;
+            }
 
             extractPath = PhConcatStrings(2,
                 SetupInstallPath->Buffer,
@@ -154,23 +225,6 @@ BOOLEAN SetupExtractBuild(
                 __leave;
             }
 
-            file_index = mz_zip_reader_locate_file(
-                &zip_archive,
-                SetupFiles_X64[i].FileName,
-                NULL,
-                0
-                );
-
-            if (file_index == -1)
-            {
-                __leave;
-            }
-
-            if (!mz_zip_reader_file_stat(&zip_archive, file_index, &file_stat))
-            {
-                __leave;
-            }
-
             PVOID buffer = mz_zip_reader_extract_to_heap(
                 &zip_archive,
                 file_index,
@@ -180,6 +234,11 @@ BOOLEAN SetupExtractBuild(
 
             // Update the hash
             file_crc32 = mz_crc32(file_crc32, buffer, bufferLength);
+
+            if (file_crc32 != file_stat.m_crc32)
+            {
+                __leave;
+            }
 
             // Write the downloaded bytes to disk.
             if (!NT_SUCCESS(NtWriteFile(
@@ -197,7 +256,7 @@ BOOLEAN SetupExtractBuild(
                 __leave;
             }
 
-            if (isb.Information != bufferLength && file_crc32 != file_stat.m_crc32)
+            if (isb.Information != bufferLength)
             {
                 __leave;
             }

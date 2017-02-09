@@ -71,7 +71,6 @@ BOOL PropSheetPage1_OnInitDialog(
     // Set the fonts
     InitializeFont(GetDlgItem(hwndDlg, IDC_MAINHEADER), -18, FW_SEMIBOLD);
     InitializeFont(GetDlgItem(hwndDlg, IDC_SUBHEADER), 0, FW_NORMAL);
-    InitializeFont(GetDlgItem(hwndDlg, IDC_SUBHEADER2), 18, FW_NORMAL);
 
     // Enable the themed dialog background texture.
     EnableThemeDialogTexture(hwndDlg, ETDT_ENABLETAB);
@@ -95,6 +94,9 @@ BOOL PropSheetPage1_OnNotify(
 
             // Disable the back button on Welcome page.
             //PropSheet_SetWizButtons(hwPropSheet, PSWIZB_NEXT);
+
+            // Reset the button states (the Next button may have been disabled).
+            PropSheet_SetWizButtons(hwPropSheet, PSWIZB_NEXT | PSWIZB_BACK);
 
             // Hide the back button on the Welcome page.
             ShowWindow(GetDlgItem(hwPropSheet, IDC_PROPSHEET_BACK), SW_HIDE);

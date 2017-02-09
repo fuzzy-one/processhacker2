@@ -11,6 +11,7 @@
 #define IDI_ICON1                       143
 #define IDB_PNG1                        144
 #define IDR_TXT1                        146
+#define IDR_RCDATA1                     150
 #define IDC_MAINHEADER                  1001
 #define IDC_PROGRESS1                   1005
 #define IDC_REMAINTIME                  1021
@@ -40,7 +41,7 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
-#define _APS_NEXT_RESOURCE_VALUE        150
+#define _APS_NEXT_RESOURCE_VALUE        151
 #define _APS_NEXT_COMMAND_VALUE         40002
 #define _APS_NEXT_CONTROL_VALUE         1068
 #define _APS_NEXT_SYMED_VALUE           101

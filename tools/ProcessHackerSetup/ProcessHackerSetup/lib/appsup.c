@@ -1,6 +1,5 @@
 ﻿#include <setup.h>
 #include <appsup.h>
-
 #include <Netlistmgr.h>
 
 HBITMAP LoadPngImageFromResources(
@@ -274,63 +273,30 @@ PPH_STRING BrowseForFolder(
 
 BOOLEAN ConnectionAvailable(VOID)
 {
-    if (WindowsVersion > WINDOWS_VISTA)
+    INetworkListManager* pNetworkListManager = NULL;
+
+    // Create an instance of the INetworkListManger COM object.
+    if (SUCCEEDED(CoCreateInstance(&CLSID_NetworkListManager, NULL, CLSCTX_ALL, &IID_INetworkListManager, &pNetworkListManager)))
     {
-        INetworkListManager* pNetworkListManager = NULL;
+        VARIANT_BOOL isConnected = VARIANT_FALSE;
+        VARIANT_BOOL isConnectedInternet = VARIANT_FALSE;
 
-        // Create an instance of the INetworkListManger COM object.
-        if (SUCCEEDED(CoCreateInstance(&CLSID_NetworkListManager, NULL, CLSCTX_ALL, &IID_INetworkListManager, &pNetworkListManager)))
-        {
-            VARIANT_BOOL isConnected = VARIANT_FALSE;
-            VARIANT_BOOL isConnectedInternet = VARIANT_FALSE;
+        // Query the relevant properties.
+        INetworkListManager_get_IsConnected(pNetworkListManager, &isConnected);
+        INetworkListManager_get_IsConnectedToInternet(pNetworkListManager, &isConnectedInternet);
 
-            // Query the relevant properties.
-            INetworkListManager_get_IsConnected(pNetworkListManager, &isConnected);
-            INetworkListManager_get_IsConnectedToInternet(pNetworkListManager, &isConnectedInternet);
+        // Cleanup the INetworkListManger COM objects.
+        INetworkListManager_Release(pNetworkListManager);
 
-            // Cleanup the INetworkListManger COM objects.
-            INetworkListManager_Release(pNetworkListManager);
+        // Check if Windows is connected to a network and it's connected to the internet.
+        if (isConnected == VARIANT_TRUE && isConnectedInternet == VARIANT_TRUE)
+            return TRUE;
 
-            // Check if Windows is connected to a network and it's connected to the internet.
-            if (isConnected == VARIANT_TRUE && isConnectedInternet == VARIANT_TRUE)
-                return TRUE;
-
-            // We're not connected to anything
-            //return FALSE;
-        }
+        // We're not connected to anything
+        //return FALSE;
     }
 
-    typedef BOOL(WINAPI *_InternetGetConnectedState)(
-        __out PULONG lpdwFlags,
-        __reserved ULONG dwReserved
-        );
-
-    BOOLEAN isSuccess = FALSE;
-    ULONG wininetState = 0;
-    _InternetGetConnectedState InternetGetConnectedState_I = NULL;
-    HMODULE inetHandle = NULL;
-
-    __try
-    {
-        if (!(inetHandle = LoadLibrary(L"wininet.dll")))
-            __leave;
-
-        InternetGetConnectedState_I = (_InternetGetConnectedState)GetProcAddress(inetHandle, "InternetGetConnectedState");
-        if (!InternetGetConnectedState_I)
-            __leave;
-
-        if (InternetGetConnectedState_I(&wininetState, 0))
-            isSuccess = TRUE;
-    }
-    __finally
-    {
-        if (inetHandle)
-        {
-            FreeLibrary(inetHandle);
-        }
-    }
-
-    return isSuccess;
+    return FALSE;
 }
 
 BOOLEAN CreateLink(
@@ -517,7 +483,9 @@ BOOLEAN IsProcessHackerInstalledUsingSetup(
 }
 
 _Check_return_
-BOOLEAN IsProcessHackerInstalled(VOID)
+BOOLEAN IsProcessHackerInstalled(
+    VOID
+    )
 {
     static PH_STRINGREF keyName = PH_STRINGREF_INIT(L"Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Process_Hacker2_is1");
     BOOLEAN keySuccess = FALSE;
@@ -536,18 +504,14 @@ BOOLEAN IsProcessHackerInstalled(VOID)
         NtClose(keyHandle);
     }
 
-    if (!PhEndsWithString2(installPath, L"ProcessHacker.exe", TRUE))
+    if (PhEndsWithString2(installPath, L"ProcessHacker.exe", TRUE))
     {
-
+        // Check if KeyData value maps to valid file path.
+        if (GetFileAttributes(installPath->Buffer) != INVALID_FILE_ATTRIBUTES)
+        {
+            keySuccess = TRUE;
+        }
     }
-
-    // Check if KeyData value maps to valid file path.
-    if (GetFileAttributes(installPath->Buffer) == INVALID_FILE_ATTRIBUTES)
-    {
-
-    }
-
-    keySuccess = TRUE;
 
     return keySuccess;
 }
@@ -558,7 +522,6 @@ PPH_STRING GetProcessHackerInstallPath(
     )
 {
     static PH_STRINGREF keyName = PH_STRINGREF_INIT(L"Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Process_Hacker2_is1");
-
     HANDLE keyHandle;
     PPH_STRING installPath = NULL;
 
