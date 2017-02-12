@@ -124,7 +124,7 @@ BOOL PropSheetPage3_OnCommand(
             {
                 PhSwapReference(&SetupInstallPath, installFolder);
 
-                SetDlgItemText(hwndDlg, IDC_INSTALL_DIRECTORY, SetupInstallPath->Buffer);
+                SetDlgItemText(hwndDlg, IDC_INSTALL_DIRECTORY, PhGetStringOrEmpty(SetupInstallPath));
             }
         }
         break;

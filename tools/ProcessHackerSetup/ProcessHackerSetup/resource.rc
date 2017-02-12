@@ -79,7 +79,7 @@ FONT 8, "MS Shell Dlg 2", 400, 0, 0x1
 BEGIN
     LTEXT           "Preparing downloads...",IDC_MAINHEADER1,22,73,243,16
     CONTROL         "Transfer rate:",IDC_REMAINTIME,"Static",SS_LEFTNOWORDWRAP | WS_GROUP,22,103,356,8
-    CONTROL         "",IDC_PROGRESS1,"msctls_progress32",PBS_SMOOTH,22,135,258,11,WS_EX_CLIENTEDGE
+    CONTROL         "",IDC_PROGRESS1,"msctls_progress32",PBS_SMOOTH,22,135,356,11,WS_EX_CLIENTEDGE
     LTEXT           "Remaining time:",IDC_REMAINTIME2,22,116,356,8
     LTEXT           "Downloaded:",IDC_REMAINTIME3,22,89,356,8
     LTEXT           "Installing Process Hacker...",IDC_MAINHEADER,22,7,267,17
@@ -90,10 +90,11 @@ STYLE DS_SETFONT | DS_MODALFRAME | DS_NOFAILCREATE | WS_POPUP | WS_CAPTION | WS_
 EXSTYLE WS_EX_CONTROLPARENT
 FONT 8, "MS Shell Dlg 2", 400, 0, 0x1
 BEGIN
-    CONTROL         "Completed the Process Hacker Setup",IDC_MAINHEADER,
-                    "Static",SS_SIMPLE | WS_GROUP,22,26,207,24
+    CONTROL         "Setup has finished installing Process Hacker.",IDC_MAINHEADER,
+                    "Static",SS_SIMPLE | WS_GROUP,22,26,247,24
     LTEXT           "Setup has finished installing Process Hacker on your computer.\r\n\r\nClick Finish to exit setup.",IDC_SUBHEADER,22,46,211,36
     CONTROL         "",IDC_PROJECT_ICON,"Static",SS_BLACKFRAME,271,15,92,75
+    CONTROL         "Start Process Hacker",IDC_CHECK1,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,22,105,83,10
 END
 
 

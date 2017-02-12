@@ -1,14 +1,11 @@
 #ifndef _APPSUP_H
 #define _APPSUP_H
 
-HWND _hwndProgress;
-
 #define STATUS_MSG(Format, ...) \
 { \
     PPH_STRING msgString = PhFormatString(Format, __VA_ARGS__); \
     if (msgString) \
     { \
-        SetDlgItemText(_hwndProgress, IDC_MAINHEADER1, msgString->Buffer); \
         DEBUG_MSG(L"%s\n", msgString->Buffer); \
         PhDereferenceObject(msgString); \
     } \

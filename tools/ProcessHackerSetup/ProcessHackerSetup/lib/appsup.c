@@ -959,7 +959,6 @@ BOOLEAN CreateDirectoryPath(
     _In_ PPH_STRING DirectoryPath
     )
 {
-    BOOLEAN success = FALSE;
     BOOLEAN directoryExists = FALSE;
     FILE_NETWORK_OPEN_INFORMATION directoryInfo;
 
@@ -980,20 +979,15 @@ BOOLEAN CreateDirectoryPath(
             ) == ERROR_SUCCESS)
         {
             DEBUG_MSG(L"Created Directory: %s\r\n", DirectoryPath->Buffer);
-            success = TRUE;
+            directoryExists = TRUE;
         }
         else
         {
             DEBUG_MSG(L"SHCreateDirectoryEx Failed\r\n");
         }
     }
-    else
-    {
-        //DEBUG_MSG(L"Directory Exists: %s\r\n", DirectoryPath->Buffer);
-        success = TRUE;
-    }
 
-    return success;
+    return directoryExists;
 }
 
 

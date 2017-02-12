@@ -1,26 +1,25 @@
 #include <setup.h>
 #include <appsup.h>
 
-NTSTATUS DownloadThread(
+NTSTATUS SetupDownloadInstallThread(
     _In_ PVOID Arguments
     )
 {
-    if (!SetupDownloadBuild(Arguments))
-        goto error;
+    //if (!SetupDownloadBuild(Arguments))
+    //    goto error;
 
     if (!SetupResetCurrentInstall(Arguments))
-        goto error;
+        goto CleanupExit;
 
-    if (SetupExtractBuild(Arguments))
-    {
-        PostMessage(Arguments, PSM_SETCURSELID, 0, IDD_DIALOG5);
-    }
+    if (!SetupExtractBuild(Arguments))
+        goto CleanupExit;
 
+    PostMessage(Arguments, PSM_SETCURSELID, 0, IDD_DIALOG5);
     return STATUS_SUCCESS;
 
-error:
-   PostMessage(Arguments, PSM_SETCURSELID, 0, IDD_DIALOG4); // Retry download
-   return STATUS_FAIL_CHECK;
+CleanupExit:
+    PostMessage(Arguments, PSM_SETCURSELID, 0, IDD_DIALOG4); // Retry download
+    return STATUS_FAIL_CHECK;
 }
 
 BOOL PropSheetPage4_OnInitDialog(
@@ -29,11 +28,13 @@ BOOL PropSheetPage4_OnInitDialog(
     _Inout_ LPARAM lParam
     )
 {
-    EnableThemeDialogTexture(hwndDlg, ETDT_ENABLETAB);
     InitializeFont(GetDlgItem(hwndDlg, IDC_MAINHEADER), -17, FW_SEMIBOLD);
     InitializeFont(GetDlgItem(hwndDlg, IDC_MAINHEADER1), -12, FW_SEMIBOLD);
 
-    SetWindowSubclass(GetDlgItem(hwndDlg, IDC_PROGRESS1), SubclassWindowProc, IDC_PROGRESS1, 0);
+    //SetWindowSubclass(GetDlgItem(hwndDlg, IDC_PROGRESS1), SubclassWindowProc, IDC_PROGRESS1, 0);
+
+    // Enable the themed dialog background texture.
+    EnableThemeDialogTexture(hwndDlg, ETDT_ENABLETAB);
 
     return TRUE;
 }
@@ -55,9 +56,7 @@ BOOL PropSheetPage4_OnNotify(
             // Disable Next/Back buttons
             PropSheet_SetWizButtons(hwPropSheet, 0);
 
-            _hwndProgress = hwndDlg;
-
-            PhCreateThread(0, DownloadThread, hwPropSheet);
+            PhCreateThread(0, SetupDownloadInstallThread, hwPropSheet);
         }
         break;
     case PSN_QUERYCANCEL:
@@ -65,11 +64,11 @@ BOOL PropSheetPage4_OnNotify(
             //if (UpdateResetState == InstallStateResetting || UpdateResetState == InstallStateInstalling)
 
             //PropSheet_CancelToClose(GetParent(hwndDlg));
-            //EnableMenuItem(GetSystemMenu(GetParent(hwndDlg), FALSE), SC_CLOSE, MF_GRAYED);
-            //EnableMenuItem(GetSystemMenu(GetParent(hwndDlg), FALSE), SC_CLOSE, MF_ENABLED);
+            EnableMenuItem(GetSystemMenu(GetParent(hwndDlg), FALSE), SC_CLOSE, MF_GRAYED);
+            EnableMenuItem(GetSystemMenu(GetParent(hwndDlg), FALSE), SC_CLOSE, MF_ENABLED);
 
-            //SetWindowLongPtr(hwndDlg, DWLP_MSGRESULT, (LPARAM)TRUE);
-            //return TRUE;
+            SetWindowLongPtr(hwndDlg, DWLP_MSGRESULT, (LPARAM)TRUE);
+            return TRUE;
         }
         break;
     case PSN_KILLACTIVE:

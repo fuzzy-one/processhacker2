@@ -66,7 +66,7 @@ BOOL PropSheetPage2_OnNotify(
         {
             HWND hwPropSheet = pageNotify->hdr.hwndFrom;
 
-#ifdef DEBUG
+#ifndef DEBUG
             // Disable the Next button (the user must accept the EULA to continue).
             PropSheet_SetWizButtons(hwPropSheet, PSWIZB_BACK);
 #endif

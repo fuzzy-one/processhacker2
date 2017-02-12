@@ -1,7 +1,7 @@
 #include <setup.h>
 #include <appsup.h>
 #include <netio.h>
-#include "lib\mxml\mxml.h"
+#include "lib/mxml/mxml.h"
 
 static PPH_STRING Version = NULL;
 static PPH_STRING DownloadURL = NULL;
@@ -18,87 +18,84 @@ static PPH_STRING GenerateDownloadFilePath(
     PPH_STRING setupFilePath = NULL;
     PPH_STRING fullSetupPath = NULL;
 
-    __try
+    // Allocate the GetTempPath buffer
+    setupTempPath = PhCreateStringEx(NULL, GetTempPath(0, NULL) * sizeof(WCHAR));
+    if (PhIsNullOrEmptyString(setupTempPath))
+        goto CleanupExit;
+
+    // Get the temp path
+    if (GetTempPath((ULONG)setupTempPath->Length / sizeof(WCHAR), setupTempPath->Buffer) == 0)
+        goto CleanupExit;
+
+    if (PhIsNullOrEmptyString(setupTempPath))
+        goto CleanupExit;
+
+    // Generate random guid for our directory path.
+    PhGenerateGuid(&randomGuid);
+
+    if (randomGuidString = PhFormatGuid(&randomGuid))
     {
-        // Allocate the GetTempPath buffer
-        setupTempPath = PhCreateStringEx(NULL, GetTempPath(0, NULL) * sizeof(WCHAR));
-        if (PhIsNullOrEmptyString(setupTempPath))
-            __leave;
+        PPH_STRING guidSubString;
 
-        // Get the temp path
-        if (GetTempPath((ULONG)setupTempPath->Length / sizeof(WCHAR), setupTempPath->Buffer) == 0)
-            __leave;
-        if (PhIsNullOrEmptyString(setupTempPath))
-            __leave;
-
-        // Generate random guid for our directory path.
-        PhGenerateGuid(&randomGuid);
-
-        if (randomGuidString = PhFormatGuid(&randomGuid))
-        {
-            PPH_STRING guidSubString;
-
-            // Strip the left and right curly brackets.
-            guidSubString = PhSubstring(
-                randomGuidString, 
-                1, 
-                randomGuidString->Length / sizeof(WCHAR) - 2
-                );
-
-            PhSwapReference(&randomGuidString, guidSubString);
-        }
-
-        // Append the tempath to our string: %TEMP%RandomString\\processhacker-%lu.%lu-setup.zip
-        // Example: C:\\Users\\dmex\\AppData\\Temp\\ABCD\\processhacker-3.10-setup.zip
-        setupFilePath = PhFormatString(
-            L"%s%s\\processhacker-%s-setup.zip",
-            setupTempPath->Buffer,
-            randomGuidString->Buffer,
-            Version->Buffer
+        // Strip the left and right curly brackets.
+        guidSubString = PhSubstring(
+            randomGuidString,
+            1,
+            randomGuidString->Length / sizeof(WCHAR) - 2
             );
 
-        // Create the directory if it does not exist.
-        if (fullSetupPath = PhGetFullPath(setupFilePath->Buffer, &indexOfFileName))
-        {
-            PPH_STRING directoryPath;
-
-            if (indexOfFileName == -1)
-                __leave;
-
-            if (directoryPath = PhSubstring(fullSetupPath, 0, indexOfFileName))
-            {
-                CreateDirectoryPath(directoryPath);
-
-                PhDereferenceObject(directoryPath);
-            }
-        }
-
-        success = TRUE;
+        PhSwapReference(&randomGuidString, guidSubString);
     }
-    __finally
+
+    // Append the tempath to our string: %TEMP%RandomString\\processhacker-%lu.%lu-setup.zip
+    // Example: C:\\Users\\dmex\\AppData\\Temp\\ABCD\\processhacker-3.10-setup.zip
+    setupFilePath = PhFormatString(
+        L"%s%s\\processhacker-%s-setup.zip",
+        setupTempPath->Buffer,
+        randomGuidString->Buffer,
+        Version->Buffer
+        );
+
+    // Create the directory if it does not exist.
+    if (fullSetupPath = PhGetFullPath(setupFilePath->Buffer, &indexOfFileName))
     {
-        if (!success)
-        {
-            if (setupFilePath)
-            {
-                PhDereferenceObject(setupFilePath);
-            }
-        }
+        PPH_STRING directoryPath;
 
-        if (fullSetupPath)
-        {
-            PhDereferenceObject(fullSetupPath);
-        }
+        if (indexOfFileName == -1)
+            goto CleanupExit;
 
-        if (randomGuidString)
+        if (directoryPath = PhSubstring(fullSetupPath, 0, indexOfFileName))
         {
-            PhDereferenceObject(randomGuidString);
-        }
+            CreateDirectoryPath(directoryPath);
 
-        if (setupTempPath)
-        {
-            PhDereferenceObject(setupTempPath);
+            PhDereferenceObject(directoryPath);
         }
+    }
+
+    success = TRUE;
+
+CleanupExit:
+    if (!success)
+    {
+        if (setupFilePath)
+        {
+            PhDereferenceObject(setupFilePath);
+        }
+    }
+
+    if (fullSetupPath)
+    {
+        PhDereferenceObject(fullSetupPath);
+    }
+
+    if (randomGuidString)
+    {
+        PhDereferenceObject(randomGuidString);
+    }
+
+    if (setupTempPath)
+    {
+        PhDereferenceObject(setupTempPath);
     }
 
     return success ? setupFilePath : NULL;

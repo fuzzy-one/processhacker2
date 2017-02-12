@@ -10,10 +10,10 @@ typedef struct _SETUP_EXTRACT_FILE
 
 SETUP_EXTRACT_FILE SetupFiles_X32[] =
 {
-    { "CHANGELOG.txt",                          L"CHANGELOG.txt" },
-    { "COPYRIGHT.txt",                          L"COPYRIGHT.txt" },
-    { "LICENSE.txt",                            L"LICENSE.txt" },
-    { "README.txt",                             L"README.txt" },
+    { "CHANGELOG.txt",                                L"CHANGELOG.txt" },
+    { "COPYRIGHT.txt",                                L"COPYRIGHT.txt" },
+    { "LICENSE.txt",                                  L"LICENSE.txt" },
+    { "README.txt",                                   L"README.txt" },
 
     { "Release32/peview.exe",                         L"peview.exe" },
     { "Release32/ProcessHacker.exe",                  L"ProcessHacker.exe" },
@@ -37,10 +37,10 @@ SETUP_EXTRACT_FILE SetupFiles_X32[] =
 
 SETUP_EXTRACT_FILE SetupFiles_X64[] =
 {
-    { "CHANGELOG.txt",                          L"CHANGELOG.txt" },
-    { "COPYRIGHT.txt",                          L"COPYRIGHT.txt" },
-    { "LICENSE.txt",                            L"LICENSE.txt" },
-    { "README.txt",                             L"README.txt" },
+    { "CHANGELOG.txt",                                L"CHANGELOG.txt" },
+    { "COPYRIGHT.txt",                                L"COPYRIGHT.txt" },
+    { "LICENSE.txt",                                  L"LICENSE.txt" },
+    { "README.txt",                                   L"README.txt" },
 
     { "Release64/peview.exe",                         L"peview.exe" },
     { "Release64/ProcessHacker.exe",                  L"ProcessHacker.exe" },
@@ -71,19 +71,11 @@ BOOLEAN SetupExtractBuild(
     _In_ PVOID Arguments
     )
 {
-    BOOLEAN isInstallSuccess = FALSE;
     mz_uint64 totalLength = 0;
     mz_uint64 total_size = 0;
-    mz_uint64 downloadedBytes = 0;
-
     PPH_STRING totalSizeStr = NULL;
-
     mz_bool status = MZ_FALSE;
-    mz_zip_archive zip_archive;
-
-    memset(&zip_archive, 0, sizeof(zip_archive));
-
-    //STATUS_MSG(L"Extracting update %s...", Version);
+    mz_zip_archive zip_archive = { 0 };
 
     __try
     {
@@ -267,8 +259,6 @@ BOOLEAN SetupExtractBuild(
             NtClose(fileHandle);
             mz_free(buffer);
         }
-
-        isInstallSuccess = TRUE;
     }
     __finally
     {

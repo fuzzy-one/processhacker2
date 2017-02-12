@@ -23,6 +23,7 @@
 
 // PropertySheet Control IDs
 #define IDD_PROPSHEET_ID            1006  // ID of the propsheet dialog template in comctl32.dll
+#define IDC_PROPSHEET_CANCEL        0x0002
 #define IDC_PROPSHEET_APPLYNOW      0x3021
 #define IDC_PROPSHEET_DLGFRAME      0x3022
 #define IDC_PROPSHEET_BACK          0x3023
@@ -110,13 +111,6 @@ BOOLEAN SetupExtractBuild(
 
 
 
-LRESULT CALLBACK SubclassWindowProc(
-    _In_ HWND hWnd,
-    _In_ UINT uMsg,
-    _In_ WPARAM wParam,
-    _In_ LPARAM lParam,
-    _In_ UINT_PTR uIdSubclass,
-    _In_ DWORD_PTR dwRefData
-    );
+VOID SubclassButton(HWND WindowHandle);
 
 #endif
