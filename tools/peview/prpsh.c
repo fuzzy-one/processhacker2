@@ -145,11 +145,10 @@ INT CALLBACK PvpPropSheetProc(
             propSheetContext = PhAllocate(sizeof(PV_PROPSHEETCONTEXT));
             memset(propSheetContext, 0, sizeof(PV_PROPSHEETCONTEXT));
 
-            SetProp(hwndDlg, L"PvContext", (HANDLE)propSheetContext);
-
             PhInitializeLayoutManager(&propSheetContext->LayoutManager, hwndDlg);
 
-            SetWindowSubclass(hwndDlg, PvpPropSheetWndProc, 0, 0);
+            SetProp(hwndDlg, L"PvContext", (HANDLE)propSheetContext);
+            SetWindowSubclass(hwndDlg, PvpPropSheetWndProc, 0, (ULONG_PTR)propSheetContext);
 
             if (MinimumSize.left == -1)
             {
@@ -186,16 +185,15 @@ LRESULT CALLBACK PvpPropSheetWndProc(
     _In_ ULONG_PTR dwRefData
     )
 {
-    PPV_PROPSHEETCONTEXT propSheetContext = PvpGetPropSheetContext(hWnd);
+    PPV_PROPSHEETCONTEXT propSheetContext = (PPV_PROPSHEETCONTEXT)dwRefData;
 
     switch (uMsg)
     {
     case WM_NCDESTROY:
         {
             RemoveWindowSubclass(hWnd, PvpPropSheetWndProc, uIdSubclass);
-            PhDeleteLayoutManager(&propSheetContext->LayoutManager);
 
-            RemoveProp(hWnd, L"PvContext");
+            PhDeleteLayoutManager(&propSheetContext->LayoutManager);
             PhFree(propSheetContext);
         }
         break;
