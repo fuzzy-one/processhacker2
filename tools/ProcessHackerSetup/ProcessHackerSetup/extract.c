@@ -200,7 +200,7 @@ BOOLEAN SetupExtractBuild(
                 PhDereferenceObject(fullSetupPath);
             }
 
-            STATUS_MSG(L"Extracting: %s\r\n", SetupFiles_X64[i].ExtractFileName);
+            STATUS_MSG(L"Extracting: %s", SetupFiles_X64[i].ExtractFileName);
 
             // Create output file
             if (!NT_SUCCESS(PhCreateFileWin32(

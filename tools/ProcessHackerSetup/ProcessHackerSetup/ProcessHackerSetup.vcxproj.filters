@@ -77,9 +77,6 @@
     <ClInclude Include="include\appsup.h">
       <Filter>Header Files\lib</Filter>
     </ClInclude>
-    <ClInclude Include="lib\mxml\config.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="resources\ProcessHacker.ico">
@@ -103,5 +100,8 @@
     <Text Include="resources\Licence.txt">
       <Filter>Resource Files\Text</Filter>
     </Text>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\..\ClientBin\processhacker-build-bin.zip" />
   </ItemGroup>
 </Project>

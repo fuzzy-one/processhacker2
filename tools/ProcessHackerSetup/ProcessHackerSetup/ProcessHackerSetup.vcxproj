@@ -114,7 +114,6 @@
     <ClInclude Include="include\setup.h" />
     <ClInclude Include="include\appsup.h" />
     <ClInclude Include="lib\miniz\miniz.h" />
-    <ClInclude Include="lib\mxml\config.h" />
     <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
@@ -131,6 +130,9 @@
   </ItemGroup>
   <ItemGroup>
     <Text Include="resources\Licence.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\..\ClientBin\processhacker-build-bin.zip" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

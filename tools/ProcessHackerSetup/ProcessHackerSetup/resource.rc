@@ -51,9 +51,9 @@ STYLE DS_SETFONT | DS_MODALFRAME | DS_NOFAILCREATE | WS_POPUP | WS_CAPTION | WS_
 EXSTYLE WS_EX_CONTROLPARENT
 FONT 8, "MS Shell Dlg 2", 400, 0, 0x1
 BEGIN
-    CONTROL         "Create a desktop shortcut",IDC_CHECK1,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,33,95,100,10
-    CONTROL         "Start on system startup",IDC_CHECK2,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,216,95,92,10
-    CONTROL         "Set Process Hacker as the default Task Manager for Windows",IDC_CHECK3,
+    CONTROL         "Create a desktop shortcut",IDC_SHORTCUT_CHECK,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,33,95,100,10
+    CONTROL         "Start on system startup",IDC_STARTUP_CHECK,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,216,95,92,10
+    CONTROL         "Set Process Hacker as the default Task Manager for Windows",IDC_TASKMANAGER_CHECK,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,33,123,213,10
     EDITTEXT        IDC_INSTALL_DIRECTORY,33,57,277,14,ES_AUTOHSCROLL | ES_READONLY
     PUSHBUTTON      "Browse",IDC_FOLDER_BROWSE,314,57,50,14
@@ -62,13 +62,16 @@ BEGIN
     GROUPBOX        "Additional Options",IDC_STATIC,22,145,356,59
     GROUPBOX        "Options",IDC_STATIC,22,82,356,59
     CONTROL         "Associate file extensions with PE Viewer",IDC_CHECK5,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,33,159,143,10
-    CONTROL         "Create a desktop shortcut for all users",IDC_CHECK7,
+                    "Button",BS_AUTOCHECKBOX | WS_DISABLED | WS_TABSTOP,33,159,143,10
+    CONTROL         "Create a desktop shortcut for all users",IDC_SHORTCUT_ALL_CHECK,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,33,109,136,10
-    CONTROL         "Start minimized on system tray",IDC_CHECK8,"Button",BS_AUTOCHECKBOX | WS_DISABLED | WS_TABSTOP,216,109,114,10
-    CONTROL         "Install KProcessHacker as a service",IDC_CHECK6,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,33,172,143,10
-    CONTROL         "Install Debugging Tools for Windows",IDC_CHECK9,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,33,186,143,10
-    CONTROL         "Reset Process Hacker settings",IDC_CHECK10,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,217,156,113,10
+    CONTROL         "Start minimized on system tray",IDC_STARTMIN_CHECK,
+                    "Button",BS_AUTOCHECKBOX | WS_DISABLED | WS_TABSTOP,216,109,114,10
+    CONTROL         "Install KProcessHacker as a service",IDC_KPH_CHECK,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,33,172,143,10
+    CONTROL         "Install Debugging Tools for Windows",IDC_DBGTOOLS_CHECK,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,33,186,143,10
+    CONTROL         "Reset Process Hacker settings",IDC_RESET_CHECK,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,217,156,113,10
     GROUPBOX        "Installation Folder",IDC_STATIC,22,41,356,40
 END
 
