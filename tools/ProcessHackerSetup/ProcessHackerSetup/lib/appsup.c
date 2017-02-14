@@ -989,16 +989,3 @@ BOOLEAN CreateDirectoryPath(
 
     return directoryExists;
 }
-
-
-PPH_STRING GetOpaqueXmlNodeText(
-    _In_ mxml_node_t *xmlNode
-    )
-{
-    if (xmlNode && xmlNode->child && xmlNode->child->type == MXML_OPAQUE && xmlNode->child->value.opaque)
-    {
-        return PhConvertUtf8ToUtf16(xmlNode->child->value.opaque);
-    }
-
-    return PhReferenceEmptyString();
-}

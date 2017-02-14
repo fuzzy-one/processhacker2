@@ -44,8 +44,4 @@ BOOLEAN CreateDirectoryPath(
     _In_ PPH_STRING DirectoryPath
     );
 
-PPH_STRING GetOpaqueXmlNodeText(
-    _In_ mxml_node_t *xmlNode
-    );
-
 #endif _APPSUP_H

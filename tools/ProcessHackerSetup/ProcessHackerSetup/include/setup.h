@@ -19,7 +19,6 @@
 #include <shlobj.h>
 
 #include "..\resource.h"
-#include "..\lib\mxml\mxml.h"
 
 // PropertySheet Control IDs
 #define IDD_PROPSHEET_ID            1006  // ID of the propsheet dialog template in comctl32.dll
@@ -98,18 +97,12 @@ ULONG UninstallKph(
     _In_ BOOLEAN Kph2Uninstall
     );
 
-
-BOOLEAN SetupDownloadBuild(
-    _In_ PVOID Arguments
-    );
 BOOLEAN SetupResetCurrentInstall(
     _In_ PVOID Arguments
     );
 BOOLEAN SetupExtractBuild(
     _In_ PVOID Arguments
     );
-
-
 
 VOID SubclassButton(HWND WindowHandle);
 

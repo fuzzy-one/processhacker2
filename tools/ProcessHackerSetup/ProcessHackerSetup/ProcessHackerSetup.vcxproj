@@ -98,20 +98,9 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="lib\mxml\mxml-attr.c" />
-    <ClCompile Include="lib\mxml\mxml-entity.c" />
-    <ClCompile Include="lib\mxml\mxml-file.c" />
-    <ClCompile Include="lib\mxml\mxml-index.c" />
-    <ClCompile Include="lib\mxml\mxml-node.c" />
-    <ClCompile Include="lib\mxml\mxml-private.c" />
-    <ClCompile Include="lib\mxml\mxml-search.c" />
-    <ClCompile Include="lib\mxml\mxml-set.c" />
-    <ClCompile Include="lib\mxml\mxml-string.c" />
-    <ClCompile Include="download.c" />
     <ClCompile Include="extract.c" />
     <ClCompile Include="lib\appsup.c" />
     <ClCompile Include="lib\miniz\miniz.c" />
-    <ClCompile Include="lib\netio.c" />
     <ClCompile Include="main.c" />
     <ClCompile Include="page1.c" />
     <ClCompile Include="page2.c" />
@@ -125,10 +114,7 @@
     <ClInclude Include="include\setup.h" />
     <ClInclude Include="include\appsup.h" />
     <ClInclude Include="lib\miniz\miniz.h" />
-    <ClInclude Include="include\netio.h" />
     <ClInclude Include="lib\mxml\config.h" />
-    <ClInclude Include="lib\mxml\mxml-private.h" />
-    <ClInclude Include="lib\mxml\mxml.h" />
     <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
