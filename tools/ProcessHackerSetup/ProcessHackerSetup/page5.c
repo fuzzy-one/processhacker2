@@ -35,6 +35,7 @@ BOOL PropSheetPage5_OnInitDialog(
 {
     // Set the fonts.
     InitializeFont(GetDlgItem(hwndDlg, IDC_MAINHEADER), -17, FW_SEMIBOLD);
+    InitializeFont(GetDlgItem(hwndDlg, IDC_SUBHEADER), -13, FW_NORMAL);
 
     LoadSetupImage(hwndDlg);
 

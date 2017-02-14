@@ -61,6 +61,16 @@ BOOL PropSheetPage3_OnInitDialog(
 {
     // Set the fonts.
     InitializeFont(GetDlgItem(hwndDlg, IDC_MAINHEADER), -17, FW_SEMIBOLD);
+    InitializeFont(GetDlgItem(hwndDlg, IDC_SUBHEADER), -12, FW_NORMAL);
+
+    InitializeFont(GetDlgItem(hwndDlg, IDC_STATIC1), -12, FW_NORMAL);
+    InitializeFont(GetDlgItem(hwndDlg, IDC_STATIC2), -12, FW_NORMAL);
+    InitializeFont(GetDlgItem(hwndDlg, IDC_SHORTCUT_CHECK), -12, FW_NORMAL);
+    InitializeFont(GetDlgItem(hwndDlg, IDC_SHORTCUT_ALL_CHECK), -12, FW_NORMAL);
+    InitializeFont(GetDlgItem(hwndDlg, IDC_TASKMANAGER_CHECK), -12, FW_NORMAL);
+    InitializeFont(GetDlgItem(hwndDlg, IDC_STARTUP_CHECK), -12, FW_NORMAL);
+    InitializeFont(GetDlgItem(hwndDlg, IDC_STARTMIN_CHECK), -12, FW_NORMAL);
+    InitializeFont(GetDlgItem(hwndDlg, IDC_TASKMANAGER_CHECK), -12, FW_NORMAL);
 
     // Set the default checkboxes.
     //Button_SetCheck(GetDlgItem(hwndDlg, IDC_CHECK1), TRUE);

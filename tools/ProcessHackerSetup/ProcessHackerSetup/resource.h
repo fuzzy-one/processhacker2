@@ -13,6 +13,7 @@
 #define IDR_RCDATA1                     150
 #define IDC_MAINHEADER                  1001
 #define IDC_PROGRESS1                   1005
+#define IDC_INSTALL_PROGRESS            1005
 #define IDC_REMAINTIME                  1021
 #define IDC_REMAINTIME2                 1022
 #define IDC_REMAINTIME3                 1023
@@ -31,9 +32,12 @@
 #define IDC_STARTMIN_CHECK              1063
 #define IDC_MAINHEADER1                 1064
 #define IDC_DBGTOOLS_CHECK              1064
+#define IDC_INSTALL_STATUS              1064
 #define IDC_INSTALL_DIRECTORY           1065
 #define IDC_RESET_CHECK                 1066
 #define IDC_SHORTCUT_CHECK              1068
+#define IDC_STATIC1                     1069
+#define IDC_STATIC2                     1070
 
 // Next default values for new objects
 // 
@@ -42,7 +46,7 @@
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        151
 #define _APS_NEXT_COMMAND_VALUE         40002
-#define _APS_NEXT_CONTROL_VALUE         1069
+#define _APS_NEXT_CONTROL_VALUE         1071
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

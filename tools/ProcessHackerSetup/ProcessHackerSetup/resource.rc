@@ -51,28 +51,28 @@ STYLE DS_SETFONT | DS_MODALFRAME | DS_NOFAILCREATE | WS_POPUP | WS_CAPTION | WS_
 EXSTYLE WS_EX_CONTROLPARENT
 FONT 8, "MS Shell Dlg 2", 400, 0, 0x1
 BEGIN
-    CONTROL         "Create a desktop shortcut",IDC_SHORTCUT_CHECK,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,33,95,100,10
-    CONTROL         "Start on system startup",IDC_STARTUP_CHECK,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,216,95,92,10
+    CONTROL         "Create a desktop shortcut",IDC_SHORTCUT_CHECK,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,31,97,178,10
+    CONTROL         "Start on system startup",IDC_STARTUP_CHECK,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,216,97,155,10
     CONTROL         "Set Process Hacker as the default Task Manager for Windows",IDC_TASKMANAGER_CHECK,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,33,123,213,10
-    EDITTEXT        IDC_INSTALL_DIRECTORY,33,57,277,14,ES_AUTOHSCROLL | ES_READONLY
-    PUSHBUTTON      "Browse",IDC_FOLDER_BROWSE,314,57,50,14
-    CONTROL         "Setup Options",IDC_MAINHEADER,"Static",SS_SIMPLE | WS_GROUP,22,7,267,24
-    LTEXT           "Please review the following tasks that will be performed during installation.",IDC_SUBHEADER,23,25,267,19
-    GROUPBOX        "Additional Options",IDC_STATIC,22,145,356,59
-    GROUPBOX        "Options",IDC_STATIC,22,82,356,59
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,31,125,345,10
+    EDITTEXT        IDC_INSTALL_DIRECTORY,33,59,277,14,ES_AUTOHSCROLL | ES_READONLY
+    PUSHBUTTON      "Browse",IDC_FOLDER_BROWSE,314,59,50,14
+    CONTROL         "Setup Options",IDC_MAINHEADER,"Static",SS_SIMPLE | WS_GROUP,22,7,356,24
+    LTEXT           "Please review the following tasks that will be performed during installation.",IDC_SUBHEADER,23,25,355,19
+    GROUPBOX        "Additional Options",IDC_STATIC,22,147,356,59
+    GROUPBOX        "Options",IDC_STATIC2,22,84,356,59
     CONTROL         "Associate file extensions with PE Viewer",IDC_CHECK5,
-                    "Button",BS_AUTOCHECKBOX | WS_DISABLED | WS_TABSTOP,33,159,143,10
+                    "Button",BS_AUTOCHECKBOX | WS_DISABLED | WS_TABSTOP,31,161,143,10
     CONTROL         "Create a desktop shortcut for all users",IDC_SHORTCUT_ALL_CHECK,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,33,109,136,10
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,31,111,178,10
     CONTROL         "Start minimized on system tray",IDC_STARTMIN_CHECK,
-                    "Button",BS_AUTOCHECKBOX | WS_DISABLED | WS_TABSTOP,216,109,114,10
+                    "Button",BS_AUTOCHECKBOX | WS_DISABLED | WS_TABSTOP,216,111,155,10
     CONTROL         "Install KProcessHacker as a service",IDC_KPH_CHECK,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,33,172,143,10
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,31,174,143,10
     CONTROL         "Install Debugging Tools for Windows",IDC_DBGTOOLS_CHECK,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,33,186,143,10
-    CONTROL         "Reset Process Hacker settings",IDC_RESET_CHECK,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,217,156,113,10
-    GROUPBOX        "Installation Folder",IDC_STATIC,22,41,356,40
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,31,188,143,10
+    CONTROL         "Reset Process Hacker settings",IDC_RESET_CHECK,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,217,158,113,10
+    GROUPBOX        "Installation Folder",IDC_STATIC1,22,43,356,40
 END
 
 IDD_DIALOG4 DIALOGEX 0, 0, 400, 225
@@ -80,12 +80,12 @@ STYLE DS_SETFONT | DS_MODALFRAME | DS_NOFAILCREATE | WS_POPUP | WS_CAPTION | WS_
 EXSTYLE WS_EX_CONTROLPARENT
 FONT 8, "MS Shell Dlg 2", 400, 0, 0x1
 BEGIN
-    LTEXT           "Preparing downloads...",IDC_MAINHEADER1,22,73,243,16
-    CONTROL         "Transfer rate:",IDC_REMAINTIME,"Static",SS_LEFTNOWORDWRAP | WS_GROUP,22,103,356,8
-    CONTROL         "",IDC_PROGRESS1,"msctls_progress32",PBS_SMOOTH,22,135,356,11,WS_EX_CLIENTEDGE
-    LTEXT           "Remaining time:",IDC_REMAINTIME2,22,116,356,8
-    LTEXT           "Downloaded:",IDC_REMAINTIME3,22,89,356,8
-    LTEXT           "Installing Process Hacker...",IDC_MAINHEADER,22,7,267,17
+    LTEXT           "Preparing installation...",IDC_INSTALL_STATUS,22,118,243,13
+    CONTROL         "",IDC_INSTALL_PROGRESS,"msctls_progress32",PBS_SMOOTH,22,135,356,11,WS_EX_CLIENTEDGE
+    CONTROL         "",IDC_PROJECT_ICON,"Static",SS_BLACKFRAME,271,15,92,75
+    CONTROL         "Installing Process Hacker on your machine...",IDC_MAINHEADER,
+                    "Static",SS_SIMPLE | WS_GROUP,22,26,259,24
+    LTEXT           "Please wait...",IDC_SUBHEADER,22,51,245,12,NOT WS_VISIBLE
 END
 
 IDD_DIALOG5 DIALOGEX 0, 0, 400, 225
@@ -93,11 +93,12 @@ STYLE DS_SETFONT | DS_MODALFRAME | DS_NOFAILCREATE | WS_POPUP | WS_CAPTION | WS_
 EXSTYLE WS_EX_CONTROLPARENT
 FONT 8, "MS Shell Dlg 2", 400, 0, 0x1
 BEGIN
-    CONTROL         "Setup has finished installing Process Hacker.",IDC_MAINHEADER,
-                    "Static",SS_SIMPLE | WS_GROUP,22,26,247,24
-    LTEXT           "Setup has finished installing Process Hacker on your computer.\r\n\r\nClick Finish to exit setup.",IDC_SUBHEADER,22,46,211,36
     CONTROL         "",IDC_PROJECT_ICON,"Static",SS_BLACKFRAME,271,15,92,75
-    CONTROL         "Start Process Hacker",IDC_CHECK1,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,22,105,83,10
+    CONTROL         "Start Process Hacker after setup exits.",IDC_CHECK1,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,22,119,141,10
+    CONTROL         "Setup has finished installing Process Hacker.",IDC_MAINHEADER,
+                    "Static",SS_SIMPLE | WS_GROUP,22,26,259,24
+    LTEXT           "Click Close to finish the installation.",IDC_SUBHEADER,22,51,245,12
 END
 
 

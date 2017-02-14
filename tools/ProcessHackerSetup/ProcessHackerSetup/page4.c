@@ -1,12 +1,11 @@
 #include <setup.h>
 #include <appsup.h>
 
-NTSTATUS SetupDownloadInstallThread(
+NTSTATUS SetupProgressThread(
     _In_ PVOID Arguments
     )
 {
     //if (!SetupDownloadBuild(Arguments))
-    //    goto error;
 
     if (!SetupResetCurrentInstall(Arguments))
         goto CleanupExit;
@@ -14,12 +13,38 @@ NTSTATUS SetupDownloadInstallThread(
     if (!SetupExtractBuild(Arguments))
         goto CleanupExit;
 
-    PostMessage(Arguments, PSM_SETCURSELID, 0, IDD_DIALOG5);
+    PostMessage(GetParent(Arguments), PSM_SETCURSELID, 0, IDD_DIALOG5);
     return STATUS_SUCCESS;
 
 CleanupExit:
-    PostMessage(Arguments, PSM_SETCURSELID, 0, IDD_DIALOG4); // Retry download
+    PostMessage(GetParent(Arguments), PSM_SETCURSELID, 0, IDD_DIALOG4); // Retry download
     return STATUS_FAIL_CHECK;
+}
+
+static VOID LoadSetupImage(
+    _In_ HWND hwndDlg
+    )
+{
+    HBITMAP imageBitmap;
+
+    imageBitmap = LoadPngImageFromResources(MAKEINTRESOURCE(IDB_PNG1));
+
+    // The image control uses a large square frame so that we can use the VS designer easily.
+    // Remove the frame style and apply the bitmap style.
+    PhSetWindowStyle(
+        GetDlgItem(hwndDlg, IDC_PROJECT_ICON),
+        SS_BITMAP | SS_BLACKFRAME,
+        SS_BITMAP
+        );
+
+    SendMessage(
+        GetDlgItem(hwndDlg, IDC_PROJECT_ICON),
+        STM_SETIMAGE,
+        IMAGE_BITMAP,
+        (LPARAM)imageBitmap
+        );
+
+    DeleteObject(imageBitmap);
 }
 
 BOOL PropSheetPage4_OnInitDialog(
@@ -29,7 +54,10 @@ BOOL PropSheetPage4_OnInitDialog(
     )
 {
     InitializeFont(GetDlgItem(hwndDlg, IDC_MAINHEADER), -17, FW_SEMIBOLD);
-    InitializeFont(GetDlgItem(hwndDlg, IDC_MAINHEADER1), -12, FW_SEMIBOLD);
+    InitializeFont(GetDlgItem(hwndDlg, IDC_SUBHEADER), -13, FW_NORMAL);
+    //InitializeFont(GetDlgItem(hwndDlg, IDC_MAINHEADER1), -12, FW_SEMIBOLD);
+
+    LoadSetupImage(hwndDlg);
 
     //SetWindowSubclass(GetDlgItem(hwndDlg, IDC_PROGRESS1), SubclassWindowProc, IDC_PROGRESS1, 0);
 
@@ -56,7 +84,7 @@ BOOL PropSheetPage4_OnNotify(
             // Disable Next/Back buttons
             PropSheet_SetWizButtons(hwPropSheet, 0);
 
-            PhCreateThread(0, SetupDownloadInstallThread, hwPropSheet);
+            NtClose(PhCreateThread(0, SetupProgressThread, hwndDlg));
         }
         break;
     case PSN_QUERYCANCEL:

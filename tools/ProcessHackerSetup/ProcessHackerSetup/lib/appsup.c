@@ -179,21 +179,17 @@ VOID InitializeFont(
     wcscpy_s(
         fontAttributes.lfFaceName,
         ARRAYSIZE(fontAttributes.lfFaceName),
-        WindowsVersion > WINDOWS_VISTA ? L"Calibri" : L"MS Shell Dlg 2"
+        L"Calibri" // Segoe UI
         );
 
     // Verdana
     // Tahoma
     // MS Sans Serif
-    //wcscpy_s(
-    //    fontAttributes.lfFaceName,
-    //    ARRAYSIZE(fontAttributes.lfFaceName),
-    //    L"Marlett"
-    //    );
+    // Marlett
 
     HFONT fontHandle = CreateFontIndirect(&fontAttributes);
-
     SendMessage(ControlHandle, WM_SETFONT, (WPARAM)fontHandle, FALSE);
+    //DeleteFont(fontHandle);
 }
 
 
