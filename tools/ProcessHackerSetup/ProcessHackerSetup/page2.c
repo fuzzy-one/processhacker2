@@ -41,7 +41,9 @@ BOOL PropSheetPage2_OnInitDialog(
     // Set the fonts.
     InitializeFont(GetDlgItem(hwndDlg, IDC_MAINHEADER), -17, FW_SEMIBOLD);
     InitializeFont(GetDlgItem(hwndDlg, IDC_SUBHEADER), -12, FW_NORMAL);
-    //InitializeFont(GetDlgItem(hwndDlg, IDC_MAINHEADER), -17, FW_SEMIBOLD);
+
+    InitializeFont(GetDlgItem(hwndDlg, IDC_EDIT1), -12, FW_NORMAL);
+
     InitializeFont(GetDlgItem(hwndDlg, IDC_RADIO1), -12, FW_NORMAL);
     InitializeFont(GetDlgItem(hwndDlg, IDC_RADIO2), -12, FW_NORMAL);
 

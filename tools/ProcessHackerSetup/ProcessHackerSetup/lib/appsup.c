@@ -6,19 +6,17 @@ HBITMAP LoadPngImageFromResources(
     _In_ PCWSTR Name
     )
 {
-    UINT width = 0;
-    UINT height = 0;
+    BOOLEAN success = FALSE;
     UINT frameCount = 0;
-    BOOLEAN isSuccess = FALSE;
     ULONG resourceLength = 0;
     HGLOBAL resourceHandle = NULL;
     HRSRC resourceHandleSource = NULL;
     WICInProcPointer resourceBuffer = NULL;
-
+    HDC screenHdc = NULL;
+    HDC bufferDc = NULL;
     BITMAPINFO bitmapInfo = { 0 };
     HBITMAP bitmapHandle = NULL;
-    PBYTE bitmapBuffer = NULL;
-
+    PVOID bitmapBuffer = NULL;
     IWICStream* wicStream = NULL;
     IWICBitmapSource* wicBitmapSource = NULL;
     IWICBitmapDecoder* wicDecoder = NULL;
@@ -26,143 +24,143 @@ HBITMAP LoadPngImageFromResources(
     IWICImagingFactory* wicFactory = NULL;
     IWICBitmapScaler* wicScaler = NULL;
     WICPixelFormatGUID pixelFormat;
-
     WICRect rect = { 0, 0, 164, 164 };
 
-    __try
+    // Create the ImagingFactory
+    if (FAILED(CoCreateInstance(&CLSID_WICImagingFactory1, NULL, CLSCTX_INPROC_SERVER, &IID_IWICImagingFactory, &wicFactory)))
+        goto CleanupExit;
+
+    // Find the resource
+    if ((resourceHandleSource = FindResource(PhLibImageBase, Name, L"PNG")) == NULL)
+        goto CleanupExit;
+
+    // Get the resource length
+    resourceLength = SizeofResource(PhLibImageBase, resourceHandleSource);
+
+    // Load the resource
+    if ((resourceHandle = LoadResource(PhLibImageBase, resourceHandleSource)) == NULL)
+        goto CleanupExit;
+
+    if ((resourceBuffer = (WICInProcPointer)LockResource(resourceHandle)) == NULL)
+        goto CleanupExit;
+
+    // Create the Stream
+    if (FAILED(IWICImagingFactory_CreateStream(wicFactory, &wicStream)))
+        goto CleanupExit;
+
+    // Initialize the Stream from Memory
+    if (FAILED(IWICStream_InitializeFromMemory(wicStream, resourceBuffer, resourceLength)))
+        goto CleanupExit;
+
+    if (FAILED(IWICImagingFactory_CreateDecoder(wicFactory, &GUID_ContainerFormatPng, NULL, &wicDecoder)))
+        goto CleanupExit;
+
+    if (FAILED(IWICBitmapDecoder_Initialize(wicDecoder, (IStream*)wicStream, WICDecodeMetadataCacheOnLoad)))
+        goto CleanupExit;
+
+    // Get the Frame count
+    if (FAILED(IWICBitmapDecoder_GetFrameCount(wicDecoder, &frameCount)) || frameCount < 1)
+        goto CleanupExit;
+
+    // Get the Frame
+    if (FAILED(IWICBitmapDecoder_GetFrame(wicDecoder, 0, &wicFrame)))
+        goto CleanupExit;
+
+    // Get the WicFrame image format
+    if (FAILED(IWICBitmapFrameDecode_GetPixelFormat(wicFrame, &pixelFormat)))
+        goto CleanupExit;
+
+    // Check if the image format is supported:
+    if (IsEqualGUID(&pixelFormat, &GUID_WICPixelFormat32bppPRGBA))
     {
-        // Create the ImagingFactory
-        if (FAILED(CoCreateInstance(&CLSID_WICImagingFactory1, NULL, CLSCTX_INPROC_SERVER, &IID_IWICImagingFactory, &wicFactory)))
-            __leave;
+        wicBitmapSource = (IWICBitmapSource*)wicFrame;
+    }
+    else
+    {
+        IWICFormatConverter* wicFormatConverter = NULL;
 
-        // Find the resource
-        if ((resourceHandleSource = FindResource(PhLibImageBase, Name, L"PNG")) == NULL)
-            __leave;
+        if (FAILED(IWICImagingFactory_CreateFormatConverter(wicFactory, &wicFormatConverter)))
+            goto CleanupExit;
 
-        // Get the resource length
-        resourceLength = SizeofResource(PhLibImageBase, resourceHandleSource);
-
-        // Load the resource
-        if ((resourceHandle = LoadResource(PhLibImageBase, resourceHandleSource)) == NULL)
-            __leave;
-
-        if ((resourceBuffer = (WICInProcPointer)LockResource(resourceHandle)) == NULL)
-            __leave;
-
-        // Create the Stream
-        if (FAILED(IWICImagingFactory_CreateStream(wicFactory, &wicStream)))
-            __leave;
-
-        // Initialize the Stream from Memory
-        if (FAILED(IWICStream_InitializeFromMemory(wicStream, resourceBuffer, resourceLength)))
-            __leave;
-
-        if (FAILED(IWICImagingFactory_CreateDecoder(wicFactory, &GUID_ContainerFormatPng, NULL, &wicDecoder)))
-            __leave;
-
-        if (FAILED(IWICBitmapDecoder_Initialize(wicDecoder, (IStream*)wicStream, WICDecodeMetadataCacheOnLoad)))
-            __leave;
-
-        // Get the Frame count
-        if (FAILED(IWICBitmapDecoder_GetFrameCount(wicDecoder, &frameCount)) || frameCount < 1)
-            __leave;
-
-        // Get the Frame
-        if (FAILED(IWICBitmapDecoder_GetFrame(wicDecoder, 0, &wicFrame)))
-            __leave;
-
-        // Get the WicFrame image format
-        if (FAILED(IWICBitmapFrameDecode_GetPixelFormat(wicFrame, &pixelFormat)))
-            __leave;
-
-        // Check if the image format is supported:
-        if (IsEqualGUID(&pixelFormat, &GUID_WICPixelFormat32bppRGBA)) //  GUID_WICPixelFormat32bppPBGRA
+        if (FAILED(IWICFormatConverter_Initialize(
+            wicFormatConverter,
+            (IWICBitmapSource*)wicFrame,
+            &GUID_WICPixelFormat32bppPRGBA,
+            WICBitmapDitherTypeNone,
+            NULL,
+            0.0,
+            WICBitmapPaletteTypeCustom
+            )))
         {
-            wicBitmapSource = (IWICBitmapSource*)wicFrame;
-        }
-        else
-        {
-            IWICFormatConverter* wicFormatConverter = NULL;
-
-            if (FAILED(IWICImagingFactory_CreateFormatConverter(wicFactory, &wicFormatConverter)))
-                __leave;
-
-            if (FAILED(IWICFormatConverter_Initialize(
-                wicFormatConverter,
-                (IWICBitmapSource*)wicFrame,
-                &GUID_WICPixelFormat32bppBGRA,
-                WICBitmapDitherTypeNone,
-                NULL,
-                0.0,
-                WICBitmapPaletteTypeCustom
-                )))
-            {
-                IWICFormatConverter_Release(wicFormatConverter);
-                __leave;
-            }
-
-            // Convert the image to the correct format:
-            IWICFormatConverter_QueryInterface(wicFormatConverter, &IID_IWICBitmapSource, &wicBitmapSource);
             IWICFormatConverter_Release(wicFormatConverter);
-            IWICBitmapFrameDecode_Release(wicFrame);
+            goto CleanupExit;
         }
 
-        bitmapInfo.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-        bitmapInfo.bmiHeader.biWidth = rect.Width;
-        bitmapInfo.bmiHeader.biHeight = -((LONG)rect.Height);
-        bitmapInfo.bmiHeader.biPlanes = 1;
-        bitmapInfo.bmiHeader.biBitCount = 32;
-        bitmapInfo.bmiHeader.biCompression = BI_RGB;
+        // Convert the image to the correct format:
+        IWICFormatConverter_QueryInterface(wicFormatConverter, &IID_IWICBitmapSource, &wicBitmapSource);
 
-        HDC hdc = CreateCompatibleDC(NULL);
-        bitmapHandle = CreateDIBSection(hdc, &bitmapInfo, DIB_RGB_COLORS, (PVOID*)&bitmapBuffer, NULL, 0);
-        ReleaseDC(NULL, hdc);
+        // Cleanup the converter.
+        IWICFormatConverter_Release(wicFormatConverter);
 
-        // Check if it's the same rect as the requested size.
-        //if (width != rect.Width || height != rect.Height)
-        if (FAILED(IWICImagingFactory_CreateBitmapScaler(wicFactory, &wicScaler)))
-            __leave;
-        if (FAILED(IWICBitmapScaler_Initialize(wicScaler, wicBitmapSource, rect.Width, rect.Height, WICBitmapInterpolationModeFant)))
-            __leave;
-        if (FAILED(IWICBitmapScaler_CopyPixels(wicScaler, &rect, rect.Width * 4, rect.Width * rect.Height * 4, bitmapBuffer)))
-            __leave;
-
-        isSuccess = TRUE;
+        // Dispose the old frame now that the converted frame is in wicBitmapSource.
+        IWICBitmapFrameDecode_Release(wicFrame);
     }
-    __finally
+
+    bitmapInfo.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+    bitmapInfo.bmiHeader.biWidth = rect.Width;
+    bitmapInfo.bmiHeader.biHeight = -((LONG)rect.Height);
+    bitmapInfo.bmiHeader.biPlanes = 1;
+    bitmapInfo.bmiHeader.biBitCount = 32;
+    bitmapInfo.bmiHeader.biCompression = BI_RGB;
+
+    screenHdc = CreateIC(L"DISPLAY", NULL, NULL, NULL);
+    bufferDc = CreateCompatibleDC(screenHdc);
+    bitmapHandle = CreateDIBSection(screenHdc, &bitmapInfo, DIB_RGB_COLORS, &bitmapBuffer, NULL, 0);
+
+    // Check if it's the same rect as the requested size.
+    //if (width != rect.Width || height != rect.Height)
+    if (FAILED(IWICImagingFactory_CreateBitmapScaler(wicFactory, &wicScaler)))
+        goto CleanupExit;
+    if (FAILED(IWICBitmapScaler_Initialize(wicScaler, wicBitmapSource, rect.Width, rect.Height, WICBitmapInterpolationModeFant)))
+        goto CleanupExit;
+    if (FAILED(IWICBitmapScaler_CopyPixels(wicScaler, &rect, rect.Width * 4, rect.Width * rect.Height * 4, (PBYTE)bitmapBuffer)))
+        goto CleanupExit;
+
+    success = TRUE;
+
+CleanupExit:
+
+    if (wicScaler)
+        IWICBitmapScaler_Release(wicScaler);
+
+    if (bufferDc)
+        DeleteDC(bufferDc);
+
+    if (screenHdc)
+        DeleteDC(screenHdc);
+
+    if (wicBitmapSource)
+        IWICBitmapSource_Release(wicBitmapSource);
+
+    if (wicStream)
+        IWICStream_Release(wicStream);
+
+    if (wicDecoder)
+        IWICBitmapDecoder_Release(wicDecoder);
+
+    if (wicFactory)
+        IWICImagingFactory_Release(wicFactory);
+
+    if (resourceHandle)
+        FreeResource(resourceHandle);
+
+    if (success)
     {
-        if (wicScaler)
-        {
-            IWICBitmapScaler_Release(wicScaler);
-        }
-
-        if (wicBitmapSource)
-        {
-            IWICBitmapSource_Release(wicBitmapSource);
-        }
-
-        if (wicStream)
-        {
-            IWICStream_Release(wicStream);
-        }
-
-        if (wicDecoder)
-        {
-            IWICBitmapDecoder_Release(wicDecoder);
-        }
-
-        if (wicFactory)
-        {
-            IWICImagingFactory_Release(wicFactory);
-        }
-
-        if (resourceHandle)
-        {
-            FreeResource(resourceHandle);
-        }
+        return bitmapHandle;
     }
 
-    return bitmapHandle;
+    DeleteObject(bitmapHandle);
+    return NULL;
 }
 
 VOID InitializeFont(
@@ -171,125 +169,44 @@ VOID InitializeFont(
     _In_ LONG Weight
     )
 {
-    LOGFONT fontAttributes = { 0 };
-    fontAttributes.lfHeight = Height;
-    fontAttributes.lfWeight = Weight;
-    fontAttributes.lfQuality = CLEARTYPE_QUALITY;
+    NONCLIENTMETRICS metrics = { sizeof(NONCLIENTMETRICS) };
+    SystemParametersInfo(SPI_GETNONCLIENTMETRICS, metrics.cbSize, &metrics, 0);
 
-    wcscpy_s(
-        fontAttributes.lfFaceName,
-        ARRAYSIZE(fontAttributes.lfFaceName),
-        L"Calibri" // Segoe UI
-        );
+    metrics.lfMessageFont.lfHeight = -PhMultiplyDivideSigned(Height, PhGlobalDpi, 72);
+    metrics.lfMessageFont.lfWeight = Weight;
+    //metrics.lfMessageFont.lfQuality = CLEARTYPE_QUALITY;
 
-    // Verdana
-    // Tahoma
-    // MS Sans Serif
-    // Marlett
+    HFONT fontHandle = CreateFontIndirect(&metrics.lfMessageFont);
 
-    HFONT fontHandle = CreateFontIndirect(&fontAttributes);
     SendMessage(ControlHandle, WM_SETFONT, (WPARAM)fontHandle, FALSE);
+
     //DeleteFont(fontHandle);
 }
 
-
-PPH_STRING PhGetUrlBaseName(
-    _In_ PPH_STRING FileName
+BOOLEAN ConnectionAvailable(
+    VOID
     )
 {
-    PH_STRINGREF pathPart;
-    PH_STRINGREF baseNamePart;
-
-    if (!PhSplitStringRefAtLastChar(&FileName->sr, '/', &pathPart, &baseNamePart))
-        return NULL;
-
-    return PhCreateString2(&baseNamePart);
-}
-
-
-PPH_STRING BrowseForFolder(
-    _In_opt_ HWND DialogHandle,
-    _In_opt_ PCWSTR Title
-    )
-{
-    if (WINDOWS_HAS_IFILEDIALOG)
-    {
-        PVOID fileDialog;
-
-        fileDialog = PhCreateOpenFileDialog();
-
-        PhSetFileDialogOptions(fileDialog, PH_FILEDIALOG_PICKFOLDERS);
-
-        if (PhShowFileDialog(DialogHandle, fileDialog))
-        {
-            PPH_STRING fileDialogFolderPath;
-            
-            fileDialogFolderPath = PH_AUTO(PhGetFileDialogFileName(fileDialog));       
-            PhTrimToNullTerminatorString(fileDialogFolderPath);
-
-            PhFreeFileDialog(fileDialog);
-
-            return PhDuplicateString(fileDialogFolderPath);
-        }
-    }
-    else
-    {
-        PIDLIST_ABSOLUTE shellItemId;
-        BROWSEINFO browseInformation;
-
-        memset(&browseInformation, 0, sizeof(BROWSEINFO));
-
-        browseInformation.hwndOwner = DialogHandle;
-        browseInformation.lpszTitle = Title;
-        browseInformation.ulFlags = BIF_RETURNONLYFSDIRS | BIF_NEWDIALOGSTYLE;  // Caller needs to call OleInitialize() before using BIF_NEWDIALOGSTYLE?
-
-        if (shellItemId = SHBrowseForFolder(&browseInformation))
-        {
-            PPH_STRING folderPath;
-
-            folderPath = PhCreateStringEx(NULL, MAX_PATH * 2);
-
-            if (SHGetPathFromIDList(shellItemId, folderPath->Buffer))
-            {
-                PhTrimToNullTerminatorString(folderPath);
-            }
-            else
-            {
-                PhClearReference(&folderPath);
-            }
-
-            CoTaskMemFree(shellItemId);
-
-            return folderPath;
-        }
-    }
-
-    return NULL;
-}
-
-BOOLEAN ConnectionAvailable(VOID)
-{
-    INetworkListManager* pNetworkListManager = NULL;
+    INetworkListManager* networkListManager = NULL;
 
     // Create an instance of the INetworkListManger COM object.
-    if (SUCCEEDED(CoCreateInstance(&CLSID_NetworkListManager, NULL, CLSCTX_ALL, &IID_INetworkListManager, &pNetworkListManager)))
+    if (SUCCEEDED(CoCreateInstance(&CLSID_NetworkListManager, NULL, CLSCTX_ALL, &IID_INetworkListManager, &networkListManager)))
     {
         VARIANT_BOOL isConnected = VARIANT_FALSE;
         VARIANT_BOOL isConnectedInternet = VARIANT_FALSE;
 
         // Query the relevant properties.
-        INetworkListManager_get_IsConnected(pNetworkListManager, &isConnected);
-        INetworkListManager_get_IsConnectedToInternet(pNetworkListManager, &isConnectedInternet);
+        INetworkListManager_get_IsConnected(networkListManager, &isConnected);
+        INetworkListManager_get_IsConnectedToInternet(networkListManager, &isConnectedInternet);
 
         // Cleanup the INetworkListManger COM objects.
-        INetworkListManager_Release(pNetworkListManager);
+        INetworkListManager_Release(networkListManager);
 
         // Check if Windows is connected to a network and it's connected to the internet.
         if (isConnected == VARIANT_TRUE && isConnectedInternet == VARIANT_TRUE)
             return TRUE;
 
         // We're not connected to anything
-        //return FALSE;
     }
 
     return FALSE;
@@ -304,122 +221,83 @@ BOOLEAN CreateLink(
 {
     IShellLink* shellLinkPtr = NULL;
     IPersistFile* persistFilePtr = NULL;
-    BOOLEAN isSuccess = FALSE;
 
-    __try
+    if (FAILED(CoCreateInstance(&CLSID_ShellLink, NULL, CLSCTX_INPROC_SERVER, &IID_IShellLink, &shellLinkPtr)))
+        return FALSE;
+
+    if (FAILED(IShellLinkW_QueryInterface(shellLinkPtr, &IID_IPersistFile, &persistFilePtr)))
     {
-        if (FAILED(CoCreateInstance(&CLSID_ShellLink, NULL, CLSCTX_INPROC_SERVER, &IID_IShellLink, &shellLinkPtr)))
-            __leave;
-        if (FAILED(IShellLinkW_QueryInterface(shellLinkPtr, &IID_IPersistFile, &persistFilePtr)))
-            __leave;
-
-        // Load existing shell item if it exists...
-        //if (SUCCEEDED(IPersistFile_Load(persistFilePtr, DestFilePath, STGM_READ)))
-        //{
-        //    IShellLinkW_Resolve(shellLinkPtr, NULL, 0);
-        //}
-
-        IShellLinkW_SetDescription(shellLinkPtr, FileComment);
-        IShellLinkW_SetWorkingDirectory(shellLinkPtr, FileParentDir);
-        IShellLinkW_SetIconLocation(shellLinkPtr, FilePath, 0);
-
-        // Set the shortcut target path...
-        if (FAILED(IShellLinkW_SetPath(shellLinkPtr, FilePath)))
-             __leave;
-
-        // Save the shortcut to the file system...
-        if (FAILED(IPersistFile_Save(persistFilePtr, DestFilePath, TRUE)))
-            __leave;
-
-        isSuccess = TRUE;
-    }
-    __finally
-    {
-        if (persistFilePtr)
-        {
-            IPersistFile_Release(persistFilePtr);
-        }
-
-        if (shellLinkPtr)
-        {
-            IShellLinkW_Release(shellLinkPtr);
-        }
+        IShellLinkW_Release(shellLinkPtr);
+        return FALSE;
     }
 
-    return isSuccess;
+    // Load existing shell item if it exists...
+    //if (SUCCEEDED(IPersistFile_Load(persistFilePtr, DestFilePath, STGM_READ)))
+    IShellLinkW_SetDescription(shellLinkPtr, FileComment);
+    IShellLinkW_SetWorkingDirectory(shellLinkPtr, FileParentDir);
+    IShellLinkW_SetIconLocation(shellLinkPtr, FilePath, 0);
+
+    // Set the shortcut target path...
+    if (FAILED(IShellLinkW_SetPath(shellLinkPtr, FilePath)))
+    {
+        IPersistFile_Release(persistFilePtr);
+        IShellLinkW_Release(shellLinkPtr);
+        return FALSE;
+    }
+
+   // Save the shortcut to the file system...
+    if (FAILED(IPersistFile_Save(persistFilePtr, DestFilePath, TRUE)))
+    {
+        IPersistFile_Release(persistFilePtr);
+        IShellLinkW_Release(shellLinkPtr);
+        return FALSE;
+    }
+
+    IPersistFile_Release(persistFilePtr);
+    IShellLinkW_Release(shellLinkPtr);
+
+    return TRUE;
 }
 
 BOOLEAN DialogPromptExit(
     _In_ HWND hwndDlg
     )
 {
-    if (WindowsVersion > WINDOWS_VISTA && TaskDialogIndirect)
-    {
-        INT nButtonPressed = 0;
+    INT nButtonPressed = 0;
 
-        TASKDIALOGCONFIG tdConfig = { sizeof(TASKDIALOGCONFIG) };
-        tdConfig.hwndParent = hwndDlg;
-        tdConfig.hInstance = PhLibImageBase;
-        tdConfig.dwFlags = TDF_POSITION_RELATIVE_TO_WINDOW;
-        tdConfig.nDefaultButton = IDNO;
-        tdConfig.dwCommonButtons = TDCBF_YES_BUTTON | TDCBF_NO_BUTTON;
-        tdConfig.pszMainIcon = TD_WARNING_ICON;
-        tdConfig.pszMainInstruction = L"Exit Setup";
-        tdConfig.pszWindowTitle = PhApplicationName;
-        tdConfig.pszContent = L"Are you sure you want to cancel the Setup?";
+    TASKDIALOGCONFIG tdConfig = { sizeof(TASKDIALOGCONFIG) };
+    tdConfig.hwndParent = hwndDlg;
+    tdConfig.hInstance = PhLibImageBase;
+    tdConfig.dwFlags = TDF_POSITION_RELATIVE_TO_WINDOW;
+    tdConfig.nDefaultButton = IDNO;
+    tdConfig.dwCommonButtons = TDCBF_YES_BUTTON | TDCBF_NO_BUTTON;
+    tdConfig.pszMainIcon = TD_WARNING_ICON;
+    tdConfig.pszMainInstruction = L"Exit Setup";
+    tdConfig.pszWindowTitle = PhApplicationName;
+    tdConfig.pszContent = L"Are you sure you want to cancel the Setup?";
 
-        TaskDialogIndirect(&tdConfig, &nButtonPressed, NULL, NULL);
+    TaskDialogIndirect(&tdConfig, &nButtonPressed, NULL, NULL);
 
-        return nButtonPressed == IDNO;
-    }
-    else
-    {
-        MSGBOXPARAMS mbParams = { sizeof(MSGBOXPARAMS) };
-        mbParams.hwndOwner = hwndDlg;
-        mbParams.hInstance = PhLibImageBase;
-        mbParams.lpszText = L"Are you sure you want to cancel the Setup?";
-        mbParams.lpszCaption = PhApplicationName;
-        mbParams.dwStyle = MB_YESNO | MB_ICONEXCLAMATION;
-        // | MB_USERICON;
-        //params.lpszIcon = MAKEINTRESOURCE(IDI_ICON1);
-
-        return MessageBoxIndirect(&mbParams) == IDNO;
-    }
+    return nButtonPressed == IDNO;
 }
 
-VOID DialogPromptsProcessHackerIsRunning(
+VOID DialogPromptProcessHackerIsRunning(
     _In_ HWND hwndDlg
     )
 {
-    if (WindowsVersion > WINDOWS_VISTA && TaskDialogIndirect) // We're on Vista or above.
-    {
-        INT nButtonPressed = 0;
+    INT buttonPressed = 0;
+    TASKDIALOGCONFIG config = { sizeof(TASKDIALOGCONFIG) };
+    config.hwndParent = hwndDlg;
+    config.hInstance = PhLibImageBase;
+    config.dwFlags = TDF_POSITION_RELATIVE_TO_WINDOW;
+    config.nDefaultButton = IDOK;
+    config.dwCommonButtons = TDCBF_OK_BUTTON;
+    config.pszMainIcon = TD_INFORMATION_ICON;
+    config.pszMainInstruction = L"Please close Process Hacker before continuing.";
+    config.pszWindowTitle = PhApplicationName;
+    //config.pszContent = L"Please close Process Hacker before continuing.";
 
-        TASKDIALOGCONFIG tdConfig = { sizeof(TASKDIALOGCONFIG) };
-        tdConfig.hwndParent = hwndDlg;
-        tdConfig.hInstance = PhLibImageBase;
-        tdConfig.dwFlags = TDF_POSITION_RELATIVE_TO_WINDOW;
-        tdConfig.nDefaultButton = IDOK;
-        tdConfig.dwCommonButtons = TDCBF_OK_BUTTON;
-        tdConfig.pszMainIcon = TD_INFORMATION_ICON;
-        tdConfig.pszMainInstruction = L"Please close Process Hacker before continuing.";
-        tdConfig.pszWindowTitle = PhApplicationName;
-        //tdConfig.pszContent = L"Please close Process Hacker before continuing.";
-
-        TaskDialogIndirect(&tdConfig, &nButtonPressed, NULL, NULL);
-    }
-    else
-    {
-        MSGBOXPARAMS mbParams = { sizeof(MSGBOXPARAMS) };
-        mbParams.hwndOwner = hwndDlg;
-        mbParams.hInstance = PhLibImageBase;
-        mbParams.lpszText = L"Please close Process Hacker before continuing.";
-        mbParams.lpszCaption = PhApplicationName;
-        mbParams.dwStyle = MB_OK; // | MB_USERICON;
-        //params.lpszIcon = MAKEINTRESOURCE(IDI_ICON1);
-
-        MessageBoxIndirect(&mbParams);
-    }
+    TaskDialogIndirect(&config, &buttonPressed, NULL, NULL);
 }
 
 _Check_return_
@@ -459,7 +337,6 @@ BOOLEAN IsProcessHackerInstalledUsingSetup(
     )
 {
     static PH_STRINGREF keyName = PH_STRINGREF_INIT(L"Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Process_Hacker2_is1");
-
     HANDLE keyHandle;
 
     // Check uninstall entries for the 'Process_Hacker2_is1' registry key.
@@ -484,7 +361,7 @@ BOOLEAN IsProcessHackerInstalled(
     )
 {
     static PH_STRINGREF keyName = PH_STRINGREF_INIT(L"Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Process_Hacker2_is1");
-    BOOLEAN keySuccess = FALSE;
+    BOOLEAN installed = FALSE;
     HANDLE keyHandle;
     PPH_STRING installPath = NULL;
 
@@ -500,16 +377,13 @@ BOOLEAN IsProcessHackerInstalled(
         NtClose(keyHandle);
     }
 
-    if (PhEndsWithString2(installPath, L"ProcessHacker.exe", TRUE))
+    if (!PhIsNullOrEmptyString(installPath) && PhEndsWithString2(installPath, L"ProcessHacker.exe", TRUE))
     {
-        // Check if KeyData value maps to valid file path.
-        if (GetFileAttributes(installPath->Buffer) != INVALID_FILE_ATTRIBUTES)
-        {
-            keySuccess = TRUE;
-        }
+        // Check if the value has a valid file path.
+        installed = GetFileAttributes(installPath->Buffer) != INVALID_FILE_ATTRIBUTES;
     }
 
-    return keySuccess;
+    return installed;
 }
 
 _Maybenull_
@@ -549,7 +423,8 @@ BOOLEAN ProcessHackerShutdown(
     {
         HANDLE processHandle;
         ULONG processID = 0;
-        ULONG threadID = GetWindowThreadProcessId(WindowHandle, &processID);
+
+        GetWindowThreadProcessId(WindowHandle, &processID);
 
         SendMessageTimeout(WindowHandle, WM_QUIT, 0, 0, SMTO_ABORTIFHUNG | SMTO_BLOCK, 5000, NULL);
 
@@ -745,24 +620,6 @@ BOOLEAN RemoveAppCompatEntries(
     return TRUE;
 }
 
-
-
-
-//PPH_STRING FileGetParentDir(
-//    _In_ PWSTR FilePath
-//    )
-//{
-//    ULONG index = 0;
-//    PCWSTR offset = _tcsrchr(FilePath, TEXT('\\'));
-//
-//    if (offset == NULL)
-//        offset = _tcsrchr(FilePath, TEXT('/'));
-//
-//    index = offset - FilePath;
-//
-//    return PhCreateStringEx(FilePath, index * sizeof(TCHAR));
-//}
-
 //BOOLEAN FileMakeDirPathRecurse(
 //    _In_ PWSTR DirPath
 //    )
@@ -779,7 +636,7 @@ BOOLEAN RemoveAppCompatEntries(
 //            __leave;
 //
 //        // Find the first directory path token...
-//        if ((dirTokenString = _tcstok_s(dirTokenDup, TEXT("\\"), &dirTokenNext)) == NULL)
+//        if ((dirTokenString = _tcstok_s(dirTokenDup, L"\\", &dirTokenNext)) == NULL)
 //            __leave;
 //
 //        while (dirTokenString)
@@ -787,7 +644,7 @@ BOOLEAN RemoveAppCompatEntries(
 //            if (dirPathString)
 //            {
 //                // Copy the new folder path to the previous folder path...
-//                PPH_STRING tempPathString = StringFormat(TEXT("%s\\%s"),
+//                PPH_STRING tempPathString = PhFormatString(L"%s\\%s",
 //                    dirPathString->Buffer,
 //                    dirTokenString
 //                    );
@@ -796,13 +653,13 @@ BOOLEAN RemoveAppCompatEntries(
 //                {
 //                    if (_tmkdir(tempPathString->Buffer) != 0)
 //                    {
-//                        DEBUG_MSG(TEXT("ERROR: _tmkdir (%u)\n"), _doserrno);
+//                        DEBUG_MSG(L"ERROR: _tmkdir (%u)\n", _doserrno);
 //                        PhFree(tempPathString);
 //                        __leave;
 //                    }
 //                    else
 //                    {
-//                        DEBUG_MSG(TEXT("CreateDir: %s\n"), tempPathString->Buffer);
+//                        DEBUG_MSG(L"CreateDir: %s\n", tempPathString->Buffer);
 //                    }
 //                }
 //
@@ -812,11 +669,11 @@ BOOLEAN RemoveAppCompatEntries(
 //            else
 //            {
 //                // Copy the drive letter and root folder...
-//                dirPathString  = StringFormat(TEXT("%s"), dirTokenString);
+//                dirPathString  = PhFormatString(L"%s", dirTokenString);
 //            }
 //
 //            // Find the next directory path token...
-//            dirTokenString = _tcstok_s(NULL, TEXT("\\"), &dirTokenNext);
+//            dirTokenString = _tcstok_s(NULL, L"\\", &dirTokenNext);
 //        }
 //
 //        isSuccess = TRUE;
@@ -845,7 +702,7 @@ BOOLEAN RemoveAppCompatEntries(
 //    intptr_t findHandle = (intptr_t)INVALID_HANDLE_VALUE;
 //    PPH_STRING dirPath = NULL;
 //
-//    dirPath = StringFormat(TEXT("%s\\*.*"), DirPath);
+//    dirPath = PhFormatString(L"%s\\*.*", DirPath);
 //
 //    // Find the first file...
 //    if ((findHandle = _tfindfirst(dirPath->Buffer, &findData)) == (intptr_t)INVALID_HANDLE_VALUE)
@@ -869,8 +726,8 @@ BOOLEAN RemoveAppCompatEntries(
 //
 //        if (findData.attrib & _A_SUBDIR)
 //        {
-//            PPH_STRING subDirPath = StringFormat(
-//                TEXT("%s\\%s"),
+//            PPH_STRING subDirPath = PhFormatString(
+//                L"%s\\%s",
 //                DirPath,
 //                findData.name
 //                );
@@ -888,7 +745,7 @@ BOOLEAN RemoveAppCompatEntries(
 //        else
 //        {
 //            PPH_STRING subDirPath = StringFormat(
-//                TEXT("%s\\%s"),
+//                L"%s\\%s",
 //                DirPath,
 //                findData.name
 //                );
@@ -897,21 +754,21 @@ BOOLEAN RemoveAppCompatEntries(
 //            {
 //                if (_tchmod(subDirPath->Buffer, _S_IWRITE) == 0)
 //                {
-//                    DEBUG_MSG(TEXT("_tchmod: %s\n"), subDirPath->Buffer);
+//                    DEBUG_MSG(L"_tchmod: %s\n", subDirPath->Buffer);
 //                }
 //                else
 //                {
-//                    DEBUG_MSG(TEXT("ERROR _tchmod: (%u) %s\n"), _doserrno, subDirPath->Buffer);
+//                    DEBUG_MSG(L"ERROR _tchmod: (%u) %s\n", _doserrno, subDirPath->Buffer);
 //                }
 //            }
 //
 //            if (_tremove(subDirPath->Buffer) == 0)
 //            {
-//                DEBUG_MSG(TEXT("DeleteFile: %s\n"), subDirPath->Buffer);
+//                DEBUG_MSG(L"DeleteFile: %s\n", subDirPath->Buffer);
 //            }
 //            else
 //            {
-//                DEBUG_MSG(TEXT("ERROR DeleteFile: (%u) %s\n"), _doserrno, subDirPath->Buffer);
+//                DEBUG_MSG(L"ERROR DeleteFile: (%u) %s\n", _doserrno, subDirPath->Buffer);
 //            }
 //
 //            PhFree(subDirPath);
@@ -928,22 +785,22 @@ BOOLEAN RemoveAppCompatEntries(
 //    //{
 //    //    if (_tchmod(DirPath, _S_IWRITE) == 0)
 //    //    {
-//    //        DEBUG_MSG(TEXT("_tchmod: %s\n"), DirPath);
+//    //        DEBUG_MSG(L"_tchmod: %s\n", DirPath);
 //    //    }
 //    //    else
 //    //    {
-//    //        DEBUG_MSG(TEXT("ERROR _tchmod: (%u) %s\n"), _doserrno, DirPath);
+//    //        DEBUG_MSG(L"ERROR _tchmod: (%u) %s\n", _doserrno, DirPath);
 //    //    }
 //    //}
 //
 //    // Lastly delete the parent directory
 //    if (_trmdir(DirPath) == 0)
 //    {
-//        DEBUG_MSG(TEXT("DeleteDirectory: %s\n"), DirPath);
+//        DEBUG_MSG(L"DeleteDirectory: %s\n", DirPath);
 //    }
 //    else
 //    {
-//        DEBUG_MSG(TEXT("ERROR DeleteDirectory: (%u) %s\n"), _doserrno, DirPath);
+//        DEBUG_MSG(L"ERROR DeleteDirectory: (%u) %s\n", _doserrno, DirPath);
 //    }
 //
 //    PhFree(dirPath);

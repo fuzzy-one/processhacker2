@@ -57,9 +57,6 @@
     <ClCompile Include="lib\superclass.c">
       <Filter>Source Files\lib</Filter>
     </ClCompile>
-    <ClCompile Include="extract.c">
-      <Filter>Source Files\setup</Filter>
-    </ClCompile>
     <ClCompile Include="reset.c">
       <Filter>Source Files\setup</Filter>
     </ClCompile>

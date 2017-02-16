@@ -2,13 +2,13 @@
 
 PPH_STRING SetupInstallPath = NULL;
 
-static VOID PvpInitializeDpi(
+static VOID SetupInitializeDpi(
     VOID
     )
 {
     HDC hdc;
 
-    if (hdc = GetDC(NULL))
+    if (hdc = CreateIC(L"DISPLAY", NULL, NULL, NULL))
     {
         PhGlobalDpi = GetDeviceCaps(hdc, LOGPIXELSY);
         ReleaseDC(NULL, hdc);
@@ -59,7 +59,7 @@ INT WINAPI wWinMain(
 
     PhApplicationName = L"Process Hacker - Setup";
     PhGuiSupportInitialization();
-    PvpInitializeDpi();
+    SetupInitializeDpi();
 
     propSheetHeader.dwFlags =
         PSH_NOAPPLYNOW |

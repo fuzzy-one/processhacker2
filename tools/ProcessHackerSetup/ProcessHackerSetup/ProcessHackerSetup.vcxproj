@@ -98,7 +98,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="extract.c" />
     <ClCompile Include="lib\appsup.c" />
     <ClCompile Include="lib\miniz\miniz.c" />
     <ClCompile Include="main.c" />

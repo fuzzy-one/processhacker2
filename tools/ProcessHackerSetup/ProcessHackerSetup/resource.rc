@@ -40,7 +40,7 @@ EXSTYLE WS_EX_CONTROLPARENT
 FONT 8, "MS Shell Dlg 2", 400, 0, 0x1
 BEGIN
     CONTROL         "License Agreement",IDC_MAINHEADER,"Static",SS_SIMPLE | WS_GROUP,22,7,267,24
-    LTEXT           "Please read the following important information. You must accept the terms of this agreement before you're able to continue with the installation.",IDC_SUBHEADER,22,23,356,19
+    LTEXT           "Please read the following important information. You must accept the terms of this agreement before you're able to continue with the installation.",IDC_SUBHEADER,22,24,356,19
     EDITTEXT        IDC_EDIT1,22,47,356,143,ES_MULTILINE | ES_READONLY | WS_VSCROLL
     CONTROL         "I accept the agreement",IDC_RADIO1,"Button",BS_AUTORADIOBUTTON,22,194,356,10
     CONTROL         "I do not accept the agreement",IDC_RADIO2,"Button",BS_AUTORADIOBUTTON,22,206,356,10
@@ -55,23 +55,23 @@ BEGIN
     CONTROL         "Start on system startup",IDC_STARTUP_CHECK,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,216,97,155,10
     CONTROL         "Set Process Hacker as the default Task Manager for Windows",IDC_TASKMANAGER_CHECK,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,31,125,345,10
-    EDITTEXT        IDC_INSTALL_DIRECTORY,33,59,277,14,ES_AUTOHSCROLL | ES_READONLY
-    PUSHBUTTON      "Browse",IDC_FOLDER_BROWSE,314,59,50,14
+    EDITTEXT        IDC_INSTALL_DIRECTORY,33,59,279,14,ES_AUTOHSCROLL | ES_READONLY
+    PUSHBUTTON      "Browse",IDC_FOLDER_BROWSE,318,59,50,14
     CONTROL         "Setup Options",IDC_MAINHEADER,"Static",SS_SIMPLE | WS_GROUP,22,7,356,24
-    LTEXT           "Please review the following tasks that will be performed during installation.",IDC_SUBHEADER,23,25,355,19
-    GROUPBOX        "Additional Options",IDC_STATIC,22,147,356,59
+    LTEXT           "Please review the following tasks that will be performed during installation.",IDC_SUBHEADER,22,24,355,19
+    GROUPBOX        "Additional Options",IDC_STATIC3,22,147,356,59
     GROUPBOX        "Options",IDC_STATIC2,22,84,356,59
-    CONTROL         "Associate file extensions with PE Viewer",IDC_CHECK5,
-                    "Button",BS_AUTOCHECKBOX | WS_DISABLED | WS_TABSTOP,31,161,143,10
+    CONTROL         "Associate file extensions with PE Viewer",IDC_PEVIEW_CHECK,
+                    "Button",BS_AUTOCHECKBOX | WS_DISABLED | WS_TABSTOP,31,160,182,10
     CONTROL         "Create a desktop shortcut for all users",IDC_SHORTCUT_ALL_CHECK,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,31,111,178,10
     CONTROL         "Start minimized on system tray",IDC_STARTMIN_CHECK,
                     "Button",BS_AUTOCHECKBOX | WS_DISABLED | WS_TABSTOP,216,111,155,10
     CONTROL         "Install KProcessHacker as a service",IDC_KPH_CHECK,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,31,174,143,10
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,31,174,182,10
     CONTROL         "Install Debugging Tools for Windows",IDC_DBGTOOLS_CHECK,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,31,188,143,10
-    CONTROL         "Reset Process Hacker settings",IDC_RESET_CHECK,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,217,158,113,10
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,31,188,182,10
+    CONTROL         "Reset Process Hacker settings",IDC_RESET_CHECK,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,217,159,154,10
     GROUPBOX        "Installation Folder",IDC_STATIC1,22,43,356,40
 END
 
@@ -80,12 +80,12 @@ STYLE DS_SETFONT | DS_MODALFRAME | DS_NOFAILCREATE | WS_POPUP | WS_CAPTION | WS_
 EXSTYLE WS_EX_CONTROLPARENT
 FONT 8, "MS Shell Dlg 2", 400, 0, 0x1
 BEGIN
-    LTEXT           "Preparing installation...",IDC_INSTALL_STATUS,22,118,243,13
+    LTEXT           "Extracting: Preparing installation...",IDC_INSTALL_STATUS,22,118,243,13
     CONTROL         "",IDC_INSTALL_PROGRESS,"msctls_progress32",PBS_SMOOTH,22,135,356,11,WS_EX_CLIENTEDGE
     CONTROL         "",IDC_PROJECT_ICON,"Static",SS_BLACKFRAME,271,15,92,75
-    CONTROL         "Installing Process Hacker on your machine...",IDC_MAINHEADER,
-                    "Static",SS_SIMPLE | WS_GROUP,22,26,259,24
-    LTEXT           "Please wait...",IDC_SUBHEADER,22,51,245,12,NOT WS_VISIBLE
+    CONTROL         "Installing Process Hacker...",IDC_MAINHEADER,"Static",SS_SIMPLE | WS_GROUP,22,26,259,24
+    LTEXT           "Please wait while Process Hacker is installed on your machine...",IDC_SUBHEADER,22,51,245,12,NOT WS_VISIBLE
+    LTEXT           "Progress: 0 of 12 (50%)",IDC_INSTALL_SUBSTATUS,22,151,243,13
 END
 
 IDD_DIALOG5 DIALOGEX 0, 0, 400, 225
@@ -94,10 +94,10 @@ EXSTYLE WS_EX_CONTROLPARENT
 FONT 8, "MS Shell Dlg 2", 400, 0, 0x1
 BEGIN
     CONTROL         "",IDC_PROJECT_ICON,"Static",SS_BLACKFRAME,271,15,92,75
-    CONTROL         "Start Process Hacker after setup exits.",IDC_CHECK1,
+    CONTROL         "Start Process Hacker after setup exits.",IDC_PHSTART_CHECK,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,22,119,141,10
     CONTROL         "Setup has finished installing Process Hacker.",IDC_MAINHEADER,
-                    "Static",SS_SIMPLE | WS_GROUP,22,26,259,24
+                    "Static",SS_SIMPLE | WS_GROUP,22,26,267,24
     LTEXT           "Click Close to finish the installation.",IDC_SUBHEADER,22,51,245,12
 END
 

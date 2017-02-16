@@ -11,11 +11,6 @@
     } \
 }
 
-PPH_STRING BrowseForFolder(
-    _In_opt_ HWND DialogHandle,
-    _In_opt_ PCWSTR Title
-    );
-
 VOID InitializeFont(
     _In_ HWND ControlHandle,
     _In_ LONG Height,

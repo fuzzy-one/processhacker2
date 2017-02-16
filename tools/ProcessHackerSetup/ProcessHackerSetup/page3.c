@@ -14,7 +14,6 @@ VOID LoadInstallDirectory(
         static PH_STRINGREF programW6432 = PH_STRINGREF_INIT(L"%ProgramW6432%");
         static PH_STRINGREF programFiles = PH_STRINGREF_INIT(L"%ProgramFiles%");
         static PH_STRINGREF defaultDirectoryName = PH_STRINGREF_INIT(L"\\Process Hacker\\");
-
         PPH_STRING expandedString;
 
         if (USER_SHARED_DATA->NativeProcessorArchitecture == PROCESSOR_ARCHITECTURE_AMD64) 
@@ -64,6 +63,9 @@ BOOL PropSheetPage3_OnInitDialog(
     InitializeFont(GetDlgItem(hwndDlg, IDC_SUBHEADER), -12, FW_NORMAL);
 
     InitializeFont(GetDlgItem(hwndDlg, IDC_STATIC1), -12, FW_NORMAL);
+    InitializeFont(GetDlgItem(hwndDlg, IDC_INSTALL_DIRECTORY), -12, FW_NORMAL);
+    InitializeFont(GetDlgItem(hwndDlg, IDC_FOLDER_BROWSE), -12, FW_NORMAL);
+
     InitializeFont(GetDlgItem(hwndDlg, IDC_STATIC2), -12, FW_NORMAL);
     InitializeFont(GetDlgItem(hwndDlg, IDC_SHORTCUT_CHECK), -12, FW_NORMAL);
     InitializeFont(GetDlgItem(hwndDlg, IDC_SHORTCUT_ALL_CHECK), -12, FW_NORMAL);
@@ -71,6 +73,12 @@ BOOL PropSheetPage3_OnInitDialog(
     InitializeFont(GetDlgItem(hwndDlg, IDC_STARTUP_CHECK), -12, FW_NORMAL);
     InitializeFont(GetDlgItem(hwndDlg, IDC_STARTMIN_CHECK), -12, FW_NORMAL);
     InitializeFont(GetDlgItem(hwndDlg, IDC_TASKMANAGER_CHECK), -12, FW_NORMAL);
+
+    InitializeFont(GetDlgItem(hwndDlg, IDC_STATIC3), -12, FW_NORMAL);
+    InitializeFont(GetDlgItem(hwndDlg, IDC_PEVIEW_CHECK), -12, FW_NORMAL);
+    InitializeFont(GetDlgItem(hwndDlg, IDC_KPH_CHECK), -12, FW_NORMAL);
+    InitializeFont(GetDlgItem(hwndDlg, IDC_DBGTOOLS_CHECK), -12, FW_NORMAL);
+    InitializeFont(GetDlgItem(hwndDlg, IDC_RESET_CHECK), -12, FW_NORMAL);
 
     // Set the default checkboxes.
     //Button_SetCheck(GetDlgItem(hwndDlg, IDC_CHECK1), TRUE);
@@ -125,15 +133,21 @@ BOOL PropSheetPage3_OnCommand(
     {
     case IDC_FOLDER_BROWSE:
         {
-            PPH_STRING installFolder;
+            PVOID fileDialog;
 
-            if (installFolder = BrowseForFolder(
-                hwndDlg, 
-                L"Select installation folder"
-                ))
+            fileDialog = PhCreateOpenFileDialog();
+            PhSetFileDialogOptions(fileDialog, PH_FILEDIALOG_PICKFOLDERS);
+
+            if (PhShowFileDialog(hwndDlg, fileDialog))
             {
-                PhSwapReference(&SetupInstallPath, installFolder);
+                PPH_STRING fileDialogFolderPath;
 
+                fileDialogFolderPath = PH_AUTO(PhGetFileDialogFileName(fileDialog));
+                PhTrimToNullTerminatorString(fileDialogFolderPath);
+
+                PhFreeFileDialog(fileDialog);
+
+                PhSwapReference(&SetupInstallPath, fileDialogFolderPath);
                 SetDlgItemText(hwndDlg, IDC_INSTALL_DIRECTORY, PhGetStringOrEmpty(SetupInstallPath));
             }
         }
