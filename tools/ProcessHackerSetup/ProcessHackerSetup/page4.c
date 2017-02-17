@@ -131,14 +131,10 @@ BOOLEAN SetupExtractBuild(
             );
 
         if (file_index == -1)
-        {
             goto CleanupExit;
-        }
 
         if (!mz_zip_reader_file_stat(&zip_archive, file_index, &file_stat))
-        {
             goto CleanupExit;
-        }
 
         extractPath = PhConcatStrings(2,
             SetupInstallPath->Buffer,
@@ -173,6 +169,10 @@ BOOLEAN SetupExtractBuild(
             GetDlgItem(Arguments, IDC_INSTALL_STATUS), 
             PhFormatString(L"Extracting: %s", extractData[i].ExtractFileName)->Buffer
             );
+        SetWindowText(
+            GetDlgItem(Arguments, IDC_INSTALL_SUBSTATUS),
+            PhFormatString(L"Progress: %lu of %lu (%.2f%%)", i, extractDataLength, (FLOAT)((double)i / (double)extractDataLength) * 100)->Buffer
+            );
 
         // TODO: Move existing folder items.
         if (!NT_SUCCESS(PhCreateFileWin32(
@@ -200,9 +200,7 @@ BOOLEAN SetupExtractBuild(
         file_crc32 = mz_crc32(file_crc32, buffer, bufferLength);
 
         if (file_crc32 != file_stat.m_crc32)
-        {
             goto CleanupExit;
-        }
 
         // Write the downloaded bytes to disk.
         if (!NT_SUCCESS(NtWriteFile(
@@ -221,9 +219,7 @@ BOOLEAN SetupExtractBuild(
         }
 
         if (isb.Information != bufferLength)
-        {
             goto CleanupExit;
-        }
 
         totalLength += (mz_uint64)bufferLength;
         //SendMessage(GetDlgItem(Arguments, IDC_INSTALL_PROGRESS), PBM_SETPOS, (WPARAM)totalLength, 0);
@@ -245,6 +241,8 @@ CleanupExit:
     {
         FreeResource(resourceHandle);
     }
+
+    Sleep(2000);
 
     return TRUE;
 }
@@ -341,11 +339,11 @@ BOOL PropSheetPage4_OnNotify(
             //if (UpdateResetState == InstallStateResetting || UpdateResetState == InstallStateInstalling)
 
             //PropSheet_CancelToClose(GetParent(hwndDlg));
-            EnableMenuItem(GetSystemMenu(GetParent(hwndDlg), FALSE), SC_CLOSE, MF_GRAYED);
-            EnableMenuItem(GetSystemMenu(GetParent(hwndDlg), FALSE), SC_CLOSE, MF_ENABLED);
+            //EnableMenuItem(GetSystemMenu(GetParent(hwndDlg), FALSE), SC_CLOSE, MF_GRAYED);
+            //EnableMenuItem(GetSystemMenu(GetParent(hwndDlg), FALSE), SC_CLOSE, MF_ENABLED);
 
-            SetWindowLongPtr(hwndDlg, DWLP_MSGRESULT, (LPARAM)TRUE);
-            return TRUE;
+            //SetWindowLongPtr(hwndDlg, DWLP_MSGRESULT, (LPARAM)TRUE);
+            //return TRUE;
         }
         break;
     case PSN_KILLACTIVE:
